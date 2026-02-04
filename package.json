@@ -1,6 +1,6 @@
 {
 	"name": "forms",
-	"version": "1.4.0",
+	"version": "1.0.0-rc.1",
 	"description": "Build a full-stack web application with Next.js.",
 	"packageManager": "pnpm@10.0.0",
 	"cloudflare": {

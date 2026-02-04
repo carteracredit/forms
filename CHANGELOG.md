@@ -1,3 +1,10 @@
+# 1.0.0-rc.1 (2026-02-04)
+
+
+### Features
+
+* add admin role middleware with session validation and forbidden page ([f7317d9](https://github.com/carteracredit/forms/commit/f7317d94ae7a48be8384279439ae09a5f1c228dc))
+
 # [1.4.0](https://github.com/algtools/next-template/compare/v1.3.0...v1.4.0) (2026-01-09)
 
 
