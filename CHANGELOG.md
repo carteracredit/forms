@@ -1,3 +1,10 @@
+# [1.0.0-rc.2](https://github.com/carteracredit/forms/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2026-02-04)
+
+
+### Features
+
+* update dependencies, enhance theming, and add new form components ([74547c2](https://github.com/carteracredit/forms/commit/74547c2d4dbd2c9a9a20f236611e2fab85f3e79c))
+
 # 1.0.0-rc.1 (2026-02-04)
 
 
