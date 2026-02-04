@@ -21,6 +21,7 @@ import {
 import { LanguageSwitcher, ThemeSwitcher } from "@algenium/blocks";
 import { Plus, User, LogOut } from "lucide-react";
 import { getAuthAppUrl } from "@/lib/auth/config";
+import { logout } from "@/lib/auth/actions";
 
 type ViewState = "list" | "detail" | "editor";
 
@@ -75,9 +76,8 @@ export function FormsHomeView() {
 		setView("detail");
 	};
 
-	const handleLogout = () => {
-		// Redirect to auth app logout
-		window.location.href = `${getAuthAppUrl()}/logout`;
+	const handleLogout = async () => {
+		await logout();
 	};
 
 	return (
@@ -163,7 +163,7 @@ export function FormsHomeView() {
 									<DropdownMenuSeparator />
 									<DropdownMenuItem asChild>
 										<a
-											href={`${getAuthAppUrl()}/account`}
+											href={`${getAuthAppUrl()}/settings`}
 											className="flex items-center gap-2 cursor-pointer"
 										>
 											<User className="h-4 w-4" />

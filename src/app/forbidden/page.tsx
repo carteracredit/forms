@@ -9,22 +9,12 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-
-/**
- * Get auth app URL for redirects.
- */
-const getAuthAppUrl = () => {
-	return (
-		process.env.NEXT_PUBLIC_AUTH_APP_URL ||
-		"https://auth.carteracredit.workers.dev"
-	);
-};
+import { logout } from "@/lib/auth/actions";
+import { getAuthAppUrl } from "@/lib/auth/config";
 
 export default function ForbiddenPage() {
-	const handleLogout = () => {
-		// Redirect to auth app login (this will clear the session on the auth side)
-		const authAppUrl = getAuthAppUrl();
-		window.location.href = `${authAppUrl}/logout`;
+	const handleLogout = async () => {
+		await logout();
 	};
 
 	const handleGoBack = () => {
