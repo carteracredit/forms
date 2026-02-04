@@ -1,3 +1,10 @@
+# [1.0.0-rc.4](https://github.com/carteracredit/forms/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2026-02-04)
+
+
+### Features
+
+* implement authClient for improved logout functionality and session management ([dc09045](https://github.com/carteracredit/forms/commit/dc09045cb027bf1aad931a026d4d0e6ca2764f79))
+
 # [1.0.0-rc.3](https://github.com/carteracredit/forms/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2026-02-04)
 
 
