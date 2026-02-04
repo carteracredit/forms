@@ -1,10 +1,14 @@
-import { listTasks } from "@/lib/api/tasks";
-import { HomeView } from "@/views/HomeView";
+import { getServerSession } from "@/lib/auth/getServerSession";
+import { redirect } from "next/navigation";
+import { FormsHomeView } from "@/views/FormsHomeView";
 
 export default async function Home() {
-	const initialTasks = await listTasks({ page: 1, per_page: 20 })
-		.then((r) => r.result)
-		.catch(() => []);
+	const session = await getServerSession();
 
-	return <HomeView initialTasks={initialTasks} />;
+	// Redirect to auth if not authenticated
+	if (!session) {
+		redirect("/forbidden");
+	}
+
+	return <FormsHomeView />;
 }
