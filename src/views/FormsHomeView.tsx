@@ -18,7 +18,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LanguageSwitcher, ThemeSwitcher } from "@janovix/blocks";
+import { LanguageSwitcher, ThemeSwitcher } from "@algenium/blocks";
 import { Plus, User, LogOut } from "lucide-react";
 import { getAuthAppUrl } from "@/lib/auth/config";
 

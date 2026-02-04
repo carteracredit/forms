@@ -41,8 +41,8 @@ vi.mock("@/lib/auth/config", () => ({
 	getAuthAppUrl: () => "https://auth.example.com",
 }));
 
-// Mock @janovix/blocks
-vi.mock("@janovix/blocks", () => ({
+// Mock @algenium/blocks
+vi.mock("@algenium/blocks", () => ({
 	LanguageSwitcher: () => (
 		<button data-testid="language-switcher">Language</button>
 	),
