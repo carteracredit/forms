@@ -39,6 +39,19 @@ vi.mock("@/lib/auth/useAuthSession", () => ({
 // Mock auth config
 vi.mock("@/lib/auth/config", () => ({
 	getAuthAppUrl: () => "https://auth.example.com",
+	getAuthServiceUrl: () => "https://auth-svc.example.com",
+}));
+
+// Mock authClient
+vi.mock("@/lib/auth/authClient", () => ({
+	authClient: {
+		signOut: vi.fn().mockResolvedValue(undefined),
+	},
+}));
+
+// Mock auth actions
+vi.mock("@/lib/auth/actions", () => ({
+	logout: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock @algenium/blocks
