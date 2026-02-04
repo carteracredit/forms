@@ -1,3 +1,10 @@
+# [1.0.0-rc.3](https://github.com/carteracredit/forms/compare/v1.0.0-rc.2...v1.0.0-rc.3) (2026-02-04)
+
+
+### Features
+
+* add app icons and web manifest for improved PWA support ([e8f5ed1](https://github.com/carteracredit/forms/commit/e8f5ed101a500a74b3033292ccee55c0bece715f))
+
 # [1.0.0-rc.2](https://github.com/carteracredit/forms/compare/v1.0.0-rc.1...v1.0.0-rc.2) (2026-02-04)
 
 
