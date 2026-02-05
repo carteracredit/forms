@@ -1,3 +1,10 @@
+# [1.0.0-rc.5](https://github.com/carteracredit/forms/compare/v1.0.0-rc.4...v1.0.0-rc.5) (2026-02-05)
+
+
+### Features
+
+* add logo SVG and integrate it into FormsHomeView ([6027840](https://github.com/carteracredit/forms/commit/6027840c8fc422424f3e3221b879ac9a31910e0b))
+
 # [1.0.0-rc.4](https://github.com/carteracredit/forms/compare/v1.0.0-rc.3...v1.0.0-rc.4) (2026-02-04)
 
 
