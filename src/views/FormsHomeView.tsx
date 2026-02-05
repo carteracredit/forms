@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useAuthSession } from "@/lib/auth/useAuthSession";
@@ -86,6 +87,13 @@ export function FormsHomeView() {
 			<header className="border-b bg-background px-6 py-3">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-4">
+						<Image
+							src="/logo.svg"
+							alt="Cartera Logo"
+							width={32}
+							height={32}
+							className="h-8 w-8"
+						/>
 						<h1 className="text-xl font-semibold">{t("app.title")}</h1>
 						{view === "list" && (
 							<Button
