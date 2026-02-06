@@ -1,3 +1,10 @@
+# [1.0.0-rc.6](https://github.com/carteracredit/forms/compare/v1.0.0-rc.5...v1.0.0-rc.6) (2026-02-06)
+
+
+### Features
+
+* add FieldShowcase component and integrate into FormDetail ([164bcd3](https://github.com/carteracredit/forms/commit/164bcd3c6485f6c321b5e33dd10c388dba7dfaf6))
+
 # [1.0.0-rc.5](https://github.com/carteracredit/forms/compare/v1.0.0-rc.4...v1.0.0-rc.5) (2026-02-05)
 
 
