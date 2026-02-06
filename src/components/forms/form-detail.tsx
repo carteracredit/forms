@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FieldShowcase } from "./field-showcase";
 
 interface FormDetailProps {
 	onBack: () => void;
@@ -125,6 +126,9 @@ export function FormDetail({ onBack, onEdit }: FormDetailProps) {
 						<TabsList>
 							<TabsTrigger value="details">
 								{t("formDetail.formDetails")}
+							</TabsTrigger>
+							<TabsTrigger value="fieldLibrary">
+								{t("formDetail.fieldLibrary")}
 							</TabsTrigger>
 						</TabsList>
 
@@ -407,6 +411,10 @@ export function FormDetail({ onBack, onEdit }: FormDetailProps) {
 									</div>
 								</div>
 							</Card>
+						</TabsContent>
+
+						<TabsContent value="fieldLibrary" className="space-y-6">
+							<FieldShowcase />
 						</TabsContent>
 					</Tabs>
 				</div>

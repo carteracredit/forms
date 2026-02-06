@@ -115,4 +115,16 @@ describe("FormDetail", () => {
 
 		expect(container).toHaveTextContent("formDetail.versionHistory");
 	});
+
+	it("should have Field Library tab", () => {
+		const onBack = vi.fn();
+		const onEdit = vi.fn();
+
+		const { getByText } = render(
+			<FormDetail onBack={onBack} onEdit={onEdit} />,
+		);
+
+		const fieldLibraryTab = getByText("formDetail.fieldLibrary");
+		expect(fieldLibraryTab).toBeInTheDocument();
+	});
 });

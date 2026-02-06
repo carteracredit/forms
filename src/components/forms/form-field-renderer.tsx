@@ -443,6 +443,8 @@ export function FormFieldRenderer({
 						onChange={(e) => onChange(field.id, e.target.value)}
 						required={field.required}
 						className={inputClass}
+						min={field.properties?.dateMin}
+						max={field.properties?.dateMax}
 					/>
 				</div>
 			);
@@ -460,6 +462,8 @@ export function FormFieldRenderer({
 						onChange={(e) => onChange(field.id, e.target.value)}
 						required={field.required}
 						className={inputClass}
+						min={field.properties?.dateMin}
+						max={field.properties?.dateMax}
 					/>
 				</div>
 			);

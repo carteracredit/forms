@@ -73,6 +73,10 @@ export interface FormField {
 		maxFileSize?: number;
 		/** Enable Google Places autocomplete for address */
 		enableAutocomplete?: boolean;
+		/** Minimum date (ISO string) for date/datetime fields */
+		dateMin?: string;
+		/** Maximum date (ISO string) for date/datetime fields */
+		dateMax?: string;
 	};
 }
 

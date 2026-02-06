@@ -28,6 +28,11 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { FormFieldRenderer } from "@/components/forms/form-field-renderer";
 import {
 	ArrowLeft,
@@ -54,6 +59,8 @@ import {
 	Star,
 	AlignLeft,
 	ChevronDown,
+	ChevronRight,
+	Code,
 	Pencil,
 } from "lucide-react";
 
@@ -82,6 +89,115 @@ const fieldTypes: {
 	{ value: "checkbox-group", label: "Checkbox Group", icon: ListChecks },
 ];
 
+/** Returns example input/output schema for a field (for preview only). */
+function getFieldSchemaPreview(field: FormField): {
+	input: Record<string, unknown>;
+	output: Record<string, unknown>;
+} {
+	const input: Record<string, unknown> = {};
+	const output: Record<string, unknown> = {};
+	switch (field.type) {
+		case "name":
+			input.firstName = "John";
+			input.lastName = "Doe";
+			output.fullName = "string";
+			break;
+		case "phone":
+			input.phone = "+14155552671";
+			output.phone = "string";
+			break;
+		case "email":
+			input.email = "user@example.com";
+			output.email = "string";
+			break;
+		case "text":
+		case "textarea":
+			input.defaultText = "string";
+			output.text = "string";
+			break;
+		case "number":
+			input.value = 0;
+			output.value = "number";
+			break;
+		case "url":
+			input.url = "https://example.com";
+			output.url = "string";
+			break;
+		case "password":
+			output.value = "string";
+			break;
+		case "dropdown":
+		case "radio":
+			input.selectedValue = field.options?.[0] ?? "string";
+			output.value = "string";
+			break;
+		case "checkbox-group":
+			input.selectedOptions = [];
+			output.selected = "string[]";
+			break;
+		case "address":
+			input.street = "string";
+			input.city = "string";
+			output.fullAddress = "string";
+			break;
+		case "file":
+			output.files = "array";
+			break;
+		case "checkbox":
+			input.checked = false;
+			output.checked = "boolean";
+			break;
+		case "date":
+			input.date = "YYYY-MM-DD";
+			output.date = "string (ISO)";
+			break;
+		case "time":
+			input.time = "HH:mm";
+			output.time = "string";
+			break;
+		case "datetime":
+			input.datetime = "ISO8601";
+			output.datetime = "string (ISO)";
+			break;
+		case "rating":
+			input.rating = 0;
+			output.rating = "number";
+			break;
+		default:
+			output.value = "unknown";
+	}
+	return { input, output };
+}
+
+/** Returns list of property badge labels for a field (e.g. "min: 0", "rows: 4"). */
+function getFieldPropertyBadges(field: FormField): string[] {
+	const badges: string[] = [];
+	if (field.validation?.minLength != null)
+		badges.push(`minLen: ${field.validation.minLength}`);
+	if (field.validation?.maxLength != null)
+		badges.push(`maxLen: ${field.validation.maxLength}`);
+	if (field.validation?.min != null)
+		badges.push(`min: ${field.validation.min}`);
+	if (field.validation?.max != null)
+		badges.push(`max: ${field.validation.max}`);
+	if (field.validation?.step != null)
+		badges.push(`step: ${field.validation.step}`);
+	if (field.properties?.rows != null)
+		badges.push(`rows: ${field.properties.rows}`);
+	if (field.properties?.maxRating != null)
+		badges.push(`maxRating: ${field.properties.maxRating}`);
+	if (field.properties?.allowHalf) badges.push("½ stars");
+	if (field.properties?.showStrength) badges.push("strength");
+	if (field.properties?.maxFileSize != null)
+		badges.push(`maxMB: ${field.properties.maxFileSize}`);
+	if (field.properties?.acceptedTypes?.length)
+		badges.push(`types: ${field.properties.acceptedTypes.join(",")}`);
+	if (field.properties?.dateMin)
+		badges.push(`from: ${field.properties.dateMin}`);
+	if (field.properties?.dateMax) badges.push(`to: ${field.properties.dateMax}`);
+	return badges;
+}
+
 interface FormEditorProps {
 	onBack: () => void;
 	onSave: () => void;
@@ -107,6 +223,29 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 	const [newFieldPlaceholderEs, setNewFieldPlaceholderEs] = useState("");
 	const [newFieldRequired, setNewFieldRequired] = useState(false);
 	const [newFieldOptions, setNewFieldOptions] = useState("");
+	// Type-specific: password
+	const [newFieldMinLength, setNewFieldMinLength] = useState<number | "">("");
+	const [newFieldShowStrength, setNewFieldShowStrength] = useState(false);
+	// Type-specific: number
+	const [newFieldMin, setNewFieldMin] = useState<number | "">("");
+	const [newFieldMax, setNewFieldMax] = useState<number | "">("");
+	const [newFieldStep, setNewFieldStep] = useState<number | "">("");
+	// Type-specific: textarea
+	const [newFieldRows, setNewFieldRows] = useState<number | "">("");
+	const [newFieldMaxLength, setNewFieldMaxLength] = useState<number | "">("");
+	// Type-specific: rating
+	const [newFieldMaxRating, setNewFieldMaxRating] = useState<number | "">("");
+	const [newFieldAllowHalf, setNewFieldAllowHalf] = useState(false);
+	// Type-specific: file
+	const [newFieldAcceptedTypes, setNewFieldAcceptedTypes] = useState("");
+	const [newFieldMaxFileSize, setNewFieldMaxFileSize] = useState<number | "">(
+		"",
+	);
+	// Type-specific: date/datetime
+	const [newFieldDateMin, setNewFieldDateMin] = useState("");
+	const [newFieldDateMax, setNewFieldDateMax] = useState("");
+	// Type-specific: time
+	const [newFieldTimeStep, setNewFieldTimeStep] = useState<number | "">("");
 
 	// Edit field state
 	const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -116,6 +255,9 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 	const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 	const dragNode = useRef<HTMLDivElement | null>(null);
+
+	// Expanded field for properties/schema view
+	const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (selectedForm) {
@@ -170,13 +312,25 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		setNewFieldPlaceholderEs("");
 		setNewFieldRequired(false);
 		setNewFieldOptions("");
+		setNewFieldMinLength("");
+		setNewFieldShowStrength(false);
+		setNewFieldMin("");
+		setNewFieldMax("");
+		setNewFieldStep("");
+		setNewFieldRows("");
+		setNewFieldMaxLength("");
+		setNewFieldMaxRating("");
+		setNewFieldAllowHalf(false);
+		setNewFieldAcceptedTypes("");
+		setNewFieldMaxFileSize("");
+		setNewFieldDateMin("");
+		setNewFieldDateMax("");
+		setNewFieldTimeStep("");
 	};
 
-	const handleAddField = () => {
-		if (!newFieldLabel.trim()) return;
-
-		const newField: FormField = {
-			id: `f${Date.now()}`,
+	const buildFieldFromForm = (id: string, existing?: FormField): FormField => {
+		const base: FormField = {
+			id,
 			type: newFieldType,
 			label: newFieldLabel,
 			labelEs: newFieldLabelEs.trim() || undefined,
@@ -190,6 +344,55 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 					: undefined,
 		};
 
+		const validation: FormField["validation"] = {};
+		const properties: FormField["properties"] = {};
+
+		if (newFieldType === "password") {
+			if (newFieldMinLength !== "")
+				validation.minLength = Number(newFieldMinLength);
+			properties.showStrength = newFieldShowStrength;
+		}
+		if (newFieldType === "number") {
+			if (newFieldMin !== "") validation.min = Number(newFieldMin);
+			if (newFieldMax !== "") validation.max = Number(newFieldMax);
+			if (newFieldStep !== "") validation.step = Number(newFieldStep);
+		}
+		if (newFieldType === "textarea") {
+			if (newFieldRows !== "") properties.rows = Number(newFieldRows);
+			if (newFieldMaxLength !== "")
+				validation.maxLength = Number(newFieldMaxLength);
+		}
+		if (newFieldType === "rating") {
+			if (newFieldMaxRating !== "")
+				properties.maxRating = Number(newFieldMaxRating);
+			properties.allowHalf = newFieldAllowHalf;
+		}
+		if (newFieldType === "file") {
+			if (newFieldAcceptedTypes.trim())
+				properties.acceptedTypes = newFieldAcceptedTypes
+					.split(",")
+					.map((s) => s.trim())
+					.filter(Boolean);
+			if (newFieldMaxFileSize !== "")
+				properties.maxFileSize = Number(newFieldMaxFileSize);
+		}
+		if (newFieldType === "date" || newFieldType === "datetime") {
+			if (newFieldDateMin.trim()) properties.dateMin = newFieldDateMin;
+			if (newFieldDateMax.trim()) properties.dateMax = newFieldDateMax;
+		}
+		if (newFieldType === "time" && newFieldTimeStep !== "") {
+			validation.step = Number(newFieldTimeStep);
+		}
+
+		if (Object.keys(validation).length > 0) base.validation = validation;
+		if (Object.keys(properties).length > 0) base.properties = properties;
+		return base;
+	};
+
+	const handleAddField = () => {
+		if (!newFieldLabel.trim()) return;
+
+		const newField = buildFieldFromForm(`f${Date.now()}`);
 		setFields([...fields, newField]);
 		resetFieldForm();
 		setShowAddField(false);
@@ -204,27 +407,29 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		setNewFieldPlaceholderEs(field.placeholderEs || "");
 		setNewFieldRequired(field.required || false);
 		setNewFieldOptions(field.options?.join(", ") || "");
+		setNewFieldMinLength(field.validation?.minLength ?? "");
+		setNewFieldShowStrength(field.properties?.showStrength ?? false);
+		setNewFieldMin(field.validation?.min ?? "");
+		setNewFieldMax(field.validation?.max ?? "");
+		setNewFieldStep(field.validation?.step ?? "");
+		setNewFieldRows(field.properties?.rows ?? "");
+		setNewFieldMaxLength(field.validation?.maxLength ?? "");
+		setNewFieldMaxRating(field.properties?.maxRating ?? "");
+		setNewFieldAllowHalf(field.properties?.allowHalf ?? false);
+		setNewFieldAcceptedTypes(field.properties?.acceptedTypes?.join(", ") ?? "");
+		setNewFieldMaxFileSize(field.properties?.maxFileSize ?? "");
+		setNewFieldDateMin(field.properties?.dateMin ?? "");
+		setNewFieldDateMax(field.properties?.dateMax ?? "");
+		setNewFieldTimeStep(
+			field.type === "time" ? (field.validation?.step ?? "") : "",
+		);
 		setShowEditField(true);
 	};
 
 	const handleUpdateField = () => {
 		if (!newFieldLabel.trim() || !editingField) return;
 
-		const updatedField: FormField = {
-			...editingField,
-			type: newFieldType,
-			label: newFieldLabel,
-			labelEs: newFieldLabelEs.trim() || undefined,
-			placeholder: newFieldPlaceholder || undefined,
-			placeholderEs: newFieldPlaceholderEs.trim() || undefined,
-			required: newFieldRequired,
-			options:
-				["radio", "checkbox-group", "dropdown"].includes(newFieldType) &&
-				newFieldOptions
-					? newFieldOptions.split(",").map((o) => o.trim())
-					: undefined,
-		};
-
+		const updatedField = buildFieldFromForm(editingField.id, editingField);
 		setFields(fields.map((f) => (f.id === editingField.id ? updatedField : f)));
 		resetFieldForm();
 		setShowEditField(false);
@@ -323,12 +528,245 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 				</div>
 			)}
 
+			{newFieldType === "password" && (
+				<>
+					<div>
+						<Label>{t("fieldProperties.minLength")}</Label>
+						<Input
+							type="number"
+							min={0}
+							value={newFieldMinLength === "" ? "" : newFieldMinLength}
+							onChange={(e) =>
+								setNewFieldMinLength(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							placeholder="8"
+							className="mt-1"
+						/>
+					</div>
+					<div className="flex items-center justify-between">
+						<Label>{t("fieldProperties.showStrength")}</Label>
+						<Switch
+							checked={newFieldShowStrength}
+							onCheckedChange={setNewFieldShowStrength}
+						/>
+					</div>
+				</>
+			)}
+
+			{newFieldType === "number" && (
+				<div className="grid grid-cols-3 gap-2">
+					<div>
+						<Label>{t("fieldProperties.min")}</Label>
+						<Input
+							type="number"
+							value={newFieldMin === "" ? "" : newFieldMin}
+							onChange={(e) =>
+								setNewFieldMin(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							className="mt-1"
+						/>
+					</div>
+					<div>
+						<Label>{t("fieldProperties.max")}</Label>
+						<Input
+							type="number"
+							value={newFieldMax === "" ? "" : newFieldMax}
+							onChange={(e) =>
+								setNewFieldMax(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							className="mt-1"
+						/>
+					</div>
+					<div>
+						<Label>{t("fieldProperties.step")}</Label>
+						<Input
+							type="number"
+							value={newFieldStep === "" ? "" : newFieldStep}
+							onChange={(e) =>
+								setNewFieldStep(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							className="mt-1"
+						/>
+					</div>
+				</div>
+			)}
+
+			{newFieldType === "textarea" && (
+				<div className="grid grid-cols-2 gap-2">
+					<div>
+						<Label>{t("fieldProperties.rows")}</Label>
+						<Input
+							type="number"
+							min={1}
+							value={newFieldRows === "" ? "" : newFieldRows}
+							onChange={(e) =>
+								setNewFieldRows(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							className="mt-1"
+						/>
+					</div>
+					<div>
+						<Label>{t("fieldProperties.maxLength")}</Label>
+						<Input
+							type="number"
+							min={0}
+							value={newFieldMaxLength === "" ? "" : newFieldMaxLength}
+							onChange={(e) =>
+								setNewFieldMaxLength(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							className="mt-1"
+						/>
+					</div>
+				</div>
+			)}
+
+			{newFieldType === "rating" && (
+				<>
+					<div>
+						<Label>{t("fieldProperties.maxRating")}</Label>
+						<Input
+							type="number"
+							min={1}
+							max={10}
+							value={newFieldMaxRating === "" ? "" : newFieldMaxRating}
+							onChange={(e) =>
+								setNewFieldMaxRating(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							placeholder="5"
+							className="mt-1"
+						/>
+					</div>
+					<div className="flex items-center justify-between">
+						<Label>{t("fieldProperties.allowHalf")}</Label>
+						<Switch
+							checked={newFieldAllowHalf}
+							onCheckedChange={setNewFieldAllowHalf}
+						/>
+					</div>
+				</>
+			)}
+
+			{newFieldType === "file" && (
+				<>
+					<div>
+						<Label>{t("fieldProperties.acceptedTypes")}</Label>
+						<Input
+							value={newFieldAcceptedTypes}
+							onChange={(e) => setNewFieldAcceptedTypes(e.target.value)}
+							placeholder=".pdf,.doc,.docx"
+							className="mt-1"
+						/>
+					</div>
+					<div>
+						<Label>{t("fieldProperties.maxFileSize")}</Label>
+						<Input
+							type="number"
+							min={0}
+							value={newFieldMaxFileSize === "" ? "" : newFieldMaxFileSize}
+							onChange={(e) =>
+								setNewFieldMaxFileSize(
+									e.target.value === "" ? "" : Number(e.target.value),
+								)
+							}
+							placeholder="10"
+							className="mt-1"
+						/>
+					</div>
+				</>
+			)}
+
+			{(newFieldType === "date" || newFieldType === "datetime") && (
+				<div className="grid grid-cols-2 gap-2">
+					<div>
+						<Label>{t("fieldProperties.min")}</Label>
+						<Input
+							type="date"
+							value={newFieldDateMin}
+							onChange={(e) => setNewFieldDateMin(e.target.value)}
+							className="mt-1"
+						/>
+					</div>
+					<div>
+						<Label>{t("fieldProperties.max")}</Label>
+						<Input
+							type="date"
+							value={newFieldDateMax}
+							onChange={(e) => setNewFieldDateMax(e.target.value)}
+							className="mt-1"
+						/>
+					</div>
+				</div>
+			)}
+
+			{newFieldType === "time" && (
+				<div>
+					<Label>{t("fieldProperties.step")}</Label>
+					<Input
+						type="number"
+						min={1}
+						value={newFieldTimeStep === "" ? "" : newFieldTimeStep}
+						onChange={(e) =>
+							setNewFieldTimeStep(
+								e.target.value === "" ? "" : Number(e.target.value),
+							)
+						}
+						placeholder="15"
+						className="mt-1"
+					/>
+				</div>
+			)}
+
 			<div className="flex items-center justify-between">
 				<Label>{t("common.required")}</Label>
 				<Switch
 					checked={newFieldRequired}
 					onCheckedChange={setNewFieldRequired}
 				/>
+			</div>
+
+			{/* Schema preview in dialog */}
+			<div className="mt-4 rounded-lg border bg-muted/30 p-3 space-y-2">
+				<p className="text-sm font-medium">{t("formEditor.schemaPreview")}</p>
+				<div className="grid grid-cols-2 gap-2 text-xs">
+					<div>
+						<p className="text-muted-foreground mb-1">
+							{t("formEditor.input")}
+						</p>
+						<pre className="overflow-x-auto rounded bg-background p-2 font-mono">
+							{JSON.stringify(
+								getFieldSchemaPreview(buildFieldFromForm("preview")).input,
+								null,
+								2,
+							)}
+						</pre>
+					</div>
+					<div>
+						<p className="text-muted-foreground mb-1">
+							{t("formEditor.output")}
+						</p>
+						<pre className="overflow-x-auto rounded bg-background p-2 font-mono">
+							{JSON.stringify(
+								getFieldSchemaPreview(buildFieldFromForm("preview")).output,
+								null,
+								2,
+							)}
+						</pre>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
@@ -469,7 +907,7 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 													</div>
 
 													<div className="flex-1 min-w-0">
-														<div className="flex items-center gap-2 mb-3 flex-wrap">
+														<div className="flex items-center gap-2 mb-2 flex-wrap">
 															<div className="flex items-center gap-2 text-muted-foreground">
 																<FieldIcon type={field.type} />
 																<Badge className="text-xs bg-teal-500/20 text-teal-700 dark:text-teal-300 hover:bg-teal-500/30 border-teal-500/30">
@@ -488,9 +926,18 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 																	{t("common.required")}
 																</Badge>
 															)}
+															{getFieldPropertyBadges(field).map((b) => (
+																<Badge
+																	key={b}
+																	variant="outline"
+																	className="text-xs font-mono"
+																>
+																	{b}
+																</Badge>
+															))}
 														</div>
 
-														<div className="bg-muted/30 rounded-lg p-3 md:p-4 border">
+														<div className="bg-muted/30 rounded-lg p-3 md:p-4 border mb-3">
 															<FormFieldRenderer
 																field={field}
 																value={previewData[field.id]}
@@ -498,6 +945,49 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 																compact
 															/>
 														</div>
+
+														<Collapsible
+															open={expandedFieldId === field.id}
+															onOpenChange={(open) =>
+																setExpandedFieldId(open ? field.id : null)
+															}
+														>
+															<CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+																{expandedFieldId === field.id ? (
+																	<ChevronDown className="h-4 w-4" />
+																) : (
+																	<ChevronRight className="h-4 w-4" />
+																)}
+																<Code className="h-4 w-4" />
+																{t("formEditor.schemaPreview")}
+															</CollapsibleTrigger>
+															<CollapsibleContent className="mt-3 space-y-3">
+																<div className="rounded-lg border bg-muted/50 p-3 text-xs">
+																	<p className="font-medium mb-2">
+																		{t("formEditor.input")}
+																	</p>
+																	<pre className="overflow-x-auto font-mono">
+																		{JSON.stringify(
+																			getFieldSchemaPreview(field).input,
+																			null,
+																			2,
+																		)}
+																	</pre>
+																</div>
+																<div className="rounded-lg border bg-muted/50 p-3 text-xs">
+																	<p className="font-medium mb-2">
+																		{t("formEditor.output")}
+																	</p>
+																	<pre className="overflow-x-auto font-mono">
+																		{JSON.stringify(
+																			getFieldSchemaPreview(field).output,
+																			null,
+																			2,
+																		)}
+																	</pre>
+																</div>
+															</CollapsibleContent>
+														</Collapsible>
 													</div>
 
 													<div className="flex gap-1">

@@ -37,6 +37,7 @@ export default defineConfig({
 				"src/components/forms/phone-input.tsx",
 				"src/components/forms/address-input.tsx",
 				"src/components/forms/create-form-dialog.tsx",
+				"src/components/forms/field-showcase.tsx",
 			],
 			thresholds: {
 				lines: 85,
