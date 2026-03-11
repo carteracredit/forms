@@ -79,61 +79,70 @@ export function FormsHomeView() {
 	};
 
 	return (
-		<div className="flex flex-col h-screen">
-			{/* Header */}
-			<header className="border-b bg-background px-6 py-3">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-4">
-						<Image
-							src="/logo.svg"
-							alt="Cartera Logo"
-							width={32}
-							height={32}
-							className="h-8 w-8"
-						/>
-						<h1 className="text-xl font-semibold">{t("app.title")}</h1>
-						{view === "list" && (
+		<div className="min-h-screen bg-background">
+			{view === "list" ? (
+				<div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-8 sm:px-6 lg:px-8">
+					{/* Header */}
+					<div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex items-center gap-3 min-w-0 flex-shrink-0">
+							<Image
+								src="/logo.svg"
+								alt="Cartera Logo"
+								width={32}
+								height={32}
+								className="h-8 w-auto shrink-0"
+							/>
+							<div className="min-w-0">
+								<h1 className="text-xl font-bold tracking-tight truncate sm:text-2xl">
+									{t("formsList.title")}
+								</h1>
+								<p className="text-sm text-muted-foreground truncate">
+									{t("formsList.subtitle")}
+								</p>
+							</div>
+						</div>
+						<div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0">
 							<Button
 								onClick={() => setShowCreateDialog(true)}
-								size="sm"
-								className="gap-2"
 								disabled={isLoading}
+								className="shrink-0"
 							>
 								{isLoading ? (
-									<Loader2 className="h-4 w-4 animate-spin" />
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								) : (
-									<Plus className="h-4 w-4" />
+									<Plus className="mr-2 h-4 w-4" />
 								)}
 								{t("formsList.createForm")}
 							</Button>
-						)}
+							<SessionControls className="flex-wrap justify-end" />
+						</div>
 					</div>
 
-					<SessionControls />
-				</div>
-			</header>
-
-			{/* Main Content */}
-			<main className="flex-1 overflow-hidden">
-				{view === "list" && (
-					<FormsList onViewForm={handleViewForm} onEditForm={handleEditForm} />
-				)}
-				{view === "detail" && (
-					<FormDetail
-						onBack={handleBack}
-						onEdit={() => {
-							const selectedForm = useFormStore.getState().selectedForm;
-							if (selectedForm) {
-								startEditing(selectedForm);
-								setView("editor");
-							}
-						}}
+					<FormsList
+						onViewForm={handleViewForm}
+						onEditForm={handleEditForm}
+						onCreateForm={() => setShowCreateDialog(true)}
 					/>
-				)}
-				{view === "editor" && (
-					<FormEditor onBack={handleBack} onSave={handleSave} />
-				)}
-			</main>
+				</div>
+			) : (
+				<div className="flex flex-col h-screen">
+					{view === "detail" && (
+						<FormDetail
+							onBack={handleBack}
+							onEdit={() => {
+								const selectedForm = useFormStore.getState().selectedForm;
+								if (selectedForm) {
+									startEditing(selectedForm);
+									setView("editor");
+								}
+							}}
+						/>
+					)}
+					{view === "editor" && (
+						<FormEditor onBack={handleBack} onSave={handleSave} />
+					)}
+				</div>
+			)}
 
 			{/* Create Form Dialog */}
 			<CreateFormDialog
