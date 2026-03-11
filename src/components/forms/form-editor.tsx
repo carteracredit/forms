@@ -64,6 +64,8 @@ import {
 	ChevronRight,
 	Code,
 	Pencil,
+	Rocket,
+	RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -874,10 +876,27 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 							onClick={() => setShowPublishDialog(true)}
 							className="gap-2 flex-1 sm:flex-none"
 							size="sm"
+							disabled={fields.length === 0}
+							title={
+								fields.length === 0
+									? t("formEditor.noFieldsToPublish")
+									: selectedForm.status === "published"
+										? t("formEditor.updateForm")
+										: t("formEditor.publishForm")
+							}
+							variant={
+								selectedForm.status === "published" ? "outline" : "default"
+							}
 						>
-							<Save className="h-4 w-4" />
+							{selectedForm.status === "published" ? (
+								<RefreshCw className="h-4 w-4" />
+							) : (
+								<Rocket className="h-4 w-4" />
+							)}
 							<span className="hidden md:inline">
-								{t("formEditor.publish")}
+								{selectedForm.status === "published"
+									? t("formEditor.update")
+									: t("formEditor.publish")}
 							</span>
 						</Button>
 						<SessionControls />

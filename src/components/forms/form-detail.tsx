@@ -20,6 +20,8 @@ import {
 	Plus,
 	Upload,
 	Archive,
+	Rocket,
+	RefreshCw,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -182,8 +184,14 @@ export function FormDetail({
 								<Button
 									onClick={() => setShowPublishDialog(true)}
 									className="gap-2"
+									disabled={selectedForm.draftFields.length === 0}
+									title={
+										selectedForm.draftFields.length === 0
+											? t("formEditor.noFieldsToPublish")
+											: t("formDetail.publishForm")
+									}
 								>
-									<Upload className="h-4 w-4" />
+									<Rocket className="h-4 w-4" />
 									{t("formDetail.publish")}
 								</Button>
 							</>
