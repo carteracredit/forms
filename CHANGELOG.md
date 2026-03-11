@@ -1,3 +1,13 @@
+# [1.0.0-rc.7](https://github.com/carteracredit/forms/compare/v1.0.0-rc.6...v1.0.0-rc.7) (2026-03-11)
+
+
+### Features
+
+* add SessionControls component for user session management ([c25cec9](https://github.com/carteracredit/forms/commit/c25cec94adec4183ada05b32334f4de99d5d96f3))
+* enhance FormsHomeView with navigation state and async form handling ([94b1184](https://github.com/carteracredit/forms/commit/94b1184547fb13720cdb87c0b3fde819fbe30f1f))
+* enhance FormsList component with new features and UI improvements ([7ed2972](https://github.com/carteracredit/forms/commit/7ed2972c5eee8c5fe857f90c9a57d0735d9c2c16))
+* implement EditFormInfoDialog component for editing form details ([e60c259](https://github.com/carteracredit/forms/commit/e60c259a024b40f752e3527d4b869829886bd6a3))
+
 # [1.0.0-rc.6](https://github.com/carteracredit/forms/compare/v1.0.0-rc.5...v1.0.0-rc.6) (2026-02-06)
 
 
