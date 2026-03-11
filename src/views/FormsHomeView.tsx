@@ -31,6 +31,7 @@ export function FormsHomeView() {
 	const [initialDetailTab, setInitialDetailTab] = useState<
 		"details" | "fieldLibrary"
 	>("details");
+	const [isNavigating, setIsNavigating] = useState(false);
 
 	// Load forms on mount
 	useEffect(() => {
@@ -44,19 +45,30 @@ export function FormsHomeView() {
 		}
 	}, [error]);
 
-	const handleViewForm = (formId: string) => {
+	const handleViewForm = async (formId: string) => {
+		setIsNavigating(true);
 		setSelectedForm(formId);
+		// The list endpoint returns summaries without versions.
+		// Refresh the full form so FormDetail has versions available.
+		await useFormStore.getState().refreshForm(formId);
+		// Re-select to pick up the updated form with versions
+		useFormStore.getState().setSelectedForm(formId);
 		setInitialDetailTab("details");
 		setView("detail");
+		setIsNavigating(false);
 	};
 
-	const handleEditForm = (formId: string) => {
+	const handleEditForm = async (formId: string) => {
+		setIsNavigating(true);
 		setSelectedForm(formId);
+		// Ensure we have the full form (with versions) before entering the editor
+		await useFormStore.getState().refreshForm(formId);
 		const form = useFormStore.getState().forms.find((f) => f.id === formId);
 		if (form) {
 			startEditing(form);
 			setView("editor");
 		}
+		setIsNavigating(false);
 	};
 
 	const handleBack = () => {
@@ -85,6 +97,11 @@ export function FormsHomeView() {
 
 	return (
 		<div className="min-h-screen bg-background">
+			{isNavigating && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+					<Loader2 className="h-8 w-8 animate-spin text-primary" />
+				</div>
+			)}
 			{view === "list" ? (
 				<div className="mx-auto w-full max-w-7xl min-w-0 px-4 py-8 sm:px-6 lg:px-8">
 					{/* Header */}
