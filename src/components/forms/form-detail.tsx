@@ -16,6 +16,8 @@ import {
 	FileJson,
 	ChevronDown,
 	Eye,
+	Info,
+	Plus,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -28,19 +30,28 @@ import {
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldShowcase } from "./field-showcase";
+import { SessionControls } from "@/components/SessionControls";
+import { EditFormInfoDialog } from "./edit-form-info-dialog";
 
 interface FormDetailProps {
 	onBack: () => void;
 	onEdit: () => void;
+	/** Initial tab to show. Defaults to "details". */
+	initialTab?: "details" | "fieldLibrary";
 }
 
-export function FormDetail({ onBack, onEdit }: FormDetailProps) {
+export function FormDetail({
+	onBack,
+	onEdit,
+	initialTab = "details",
+}: FormDetailProps) {
 	const { selectedForm, selectedVersion, setSelectedVersion } = useFormStore();
 	const { t, language, getFieldLabel } = useLanguage();
 	const router = useRouter();
 	const [showVersions, setShowVersions] = useState(false);
 	const [showInputSchema, setShowInputSchema] = useState(false);
 	const [showOutputSchema, setShowOutputSchema] = useState(true);
+	const [showEditInfoDialog, setShowEditInfoDialog] = useState(false);
 
 	const dateLocale = language === "es" ? es : enUS;
 
@@ -81,26 +92,38 @@ export function FormDetail({ onBack, onEdit }: FormDetailProps) {
 						{t("common.back")}
 					</Button>
 					<Separator orientation="vertical" className="h-6" />
-					<div className="flex-1">
-						<h1 className="text-2xl font-semibold text-foreground">
+					<div className="flex-1 min-w-0">
+						<h1 className="text-2xl font-semibold text-foreground truncate">
 							{selectedForm.name}
 						</h1>
-						<p className="text-sm text-muted-foreground mt-1">
+						<p className="text-sm text-muted-foreground mt-1 truncate">
 							{selectedForm.description}
 						</p>
 					</div>
-					<Button
-						variant="outline"
-						onClick={() => router.push(`/preview/${selectedForm.id}`)}
-						className="gap-2"
-					>
-						<Eye className="h-4 w-4" />
-						{t("formDetail.previewForm")}
-					</Button>
-					<Button onClick={onEdit} className="gap-2">
-						<Edit className="h-4 w-4" />
-						{t("formDetail.editForm")}
-					</Button>
+					<div className="flex items-center gap-2 shrink-0">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setShowEditInfoDialog(true)}
+							className="gap-2"
+						>
+							<Info className="h-4 w-4" />
+							{t("formDetail.editInfo")}
+						</Button>
+						<Button
+							variant="outline"
+							onClick={() => router.push(`/preview/${selectedForm.id}`)}
+							className="gap-2"
+						>
+							<Eye className="h-4 w-4" />
+							{t("formDetail.previewForm")}
+						</Button>
+						<Button onClick={onEdit} className="gap-2">
+							<Edit className="h-4 w-4" />
+							{t("formDetail.editFields")}
+						</Button>
+						<SessionControls />
+					</div>
 				</div>
 
 				<div className="flex items-center gap-3">
@@ -122,7 +145,7 @@ export function FormDetail({ onBack, onEdit }: FormDetailProps) {
 			{/* Content */}
 			<div className="flex-1 overflow-auto p-6">
 				<div className="max-w-5xl mx-auto">
-					<Tabs defaultValue="details" className="space-y-6">
+					<Tabs defaultValue={initialTab} className="space-y-6">
 						<TabsList>
 							<TabsTrigger value="details">
 								{t("formDetail.formDetails")}
@@ -139,9 +162,19 @@ export function FormDetail({ onBack, onEdit }: FormDetailProps) {
 									{t("formDetail.formFields")}
 								</h2>
 								{selectedVersion.fields.length === 0 ? (
-									<p className="text-sm text-muted-foreground text-center py-8">
-										{t("formDetail.noFieldsYet")}
-									</p>
+									<div className="text-center py-12 border-2 border-dashed rounded-lg">
+										<p className="text-sm text-muted-foreground mb-4">
+											{t("formDetail.noFieldsConfigured")}
+										</p>
+										<Button
+											onClick={onEdit}
+											variant="outline"
+											className="gap-2"
+										>
+											<Plus className="h-4 w-4" />
+											{t("formDetail.goToEditor")}
+										</Button>
+									</div>
 								) : (
 									<div className="space-y-3">
 										{selectedVersion.fields.map((field, index) => (
@@ -419,6 +452,12 @@ export function FormDetail({ onBack, onEdit }: FormDetailProps) {
 					</Tabs>
 				</div>
 			</div>
+
+			{/* Edit Form Info Dialog */}
+			<EditFormInfoDialog
+				open={showEditInfoDialog}
+				onOpenChange={setShowEditInfoDialog}
+			/>
 		</div>
 	);
 }

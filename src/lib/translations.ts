@@ -118,9 +118,15 @@ export const translations = {
 		formDetail: {
 			previewForm: "Preview Form",
 			editForm: "Edit Form",
+			editFields: "Edit Fields",
+			editInfo: "Edit Info",
+			editFormInfo: "Edit Form Info",
+			goToEditor: "Go to field editor",
 			formDetails: "Form Details",
 			fieldLibrary: "Field Library",
 			formFields: "Form Fields",
+			noFieldsConfigured:
+				"No fields configured yet. Add fields to define what data this form collects.",
 			noFieldsYet: "No fields configured yet",
 			schemaManagement: "Schema Management",
 			inputSchema: "Input Schema",
@@ -145,7 +151,11 @@ export const translations = {
 		// Form Editor
 		formEditor: {
 			editForm: "Edit Form",
+			editFields: "Edit Fields",
 			unsavedChanges: "Editing - Unsaved Changes",
+			noChanges: "No changes detected",
+			noChangesDesc:
+				"The fields are identical to the current version. Make changes before saving.",
 			showPreview: "Show Preview",
 			hidePreview: "Hide Preview",
 			fullPreview: "Full Preview",
@@ -374,7 +384,7 @@ export const translations = {
 			clearRatingOption: "Option to clear rating",
 		},
 
-		// Create Form Dialog
+		// Create Form / Edit Info Dialog
 		createForm: {
 			title: "Create New Form",
 			subtitle: "Start building a new form for your workflow",
@@ -382,6 +392,15 @@ export const translations = {
 			formNamePlaceholder: "e.g. Customer Feedback Form",
 			descriptionLabel: "Description",
 			descriptionPlaceholder: "Describe the purpose of this form...",
+		},
+
+		// Edit Form Info Dialog
+		editFormInfo: {
+			title: "Edit Form Info",
+			subtitle: "Update the name, description, and tags of this form",
+			tags: "Tags",
+			tagsPlaceholder: "tag1, tag2, tag3",
+			tagsHint: "Comma-separated tags",
 		},
 
 		// Preview
@@ -610,9 +629,15 @@ export const translations = {
 		formDetail: {
 			previewForm: "Vista Previa",
 			editForm: "Editar Formulario",
+			editFields: "Editar Campos",
+			editInfo: "Editar Info",
+			editFormInfo: "Editar Info del Formulario",
+			goToEditor: "Ir al editor de campos",
 			formDetails: "Detalles del Formulario",
 			fieldLibrary: "Biblioteca de Campos",
 			formFields: "Campos del Formulario",
+			noFieldsConfigured:
+				"Aún no hay campos configurados. Agrega campos para definir qué datos recopila este formulario.",
 			noFieldsYet: "Aún no hay campos configurados",
 			schemaManagement: "Gestión de Esquemas",
 			inputSchema: "Esquema de Entrada",
@@ -638,7 +663,11 @@ export const translations = {
 		// Form Editor
 		formEditor: {
 			editForm: "Editar Formulario",
+			editFields: "Editar Campos",
 			unsavedChanges: "Editando - Cambios sin guardar",
+			noChanges: "Sin cambios detectados",
+			noChangesDesc:
+				"Los campos son idénticos a la versión actual. Realiza cambios antes de guardar.",
 			showPreview: "Mostrar Vista Previa",
 			hidePreview: "Ocultar Vista Previa",
 			fullPreview: "Vista Previa Completa",
@@ -875,7 +904,7 @@ export const translations = {
 			clearRatingOption: "Opción para borrar calificación",
 		},
 
-		// Create Form Dialog
+		// Create Form / Edit Info Dialog
 		createForm: {
 			title: "Crear Nuevo Formulario",
 			subtitle:
@@ -884,6 +913,16 @@ export const translations = {
 			formNamePlaceholder: "ej. Formulario de Comentarios del Cliente",
 			descriptionLabel: "Descripción",
 			descriptionPlaceholder: "Describe el propósito de este formulario...",
+		},
+
+		// Edit Form Info Dialog
+		editFormInfo: {
+			title: "Editar Info del Formulario",
+			subtitle:
+				"Actualiza el nombre, descripción y etiquetas de este formulario",
+			tags: "Etiquetas",
+			tagsPlaceholder: "etiqueta1, etiqueta2, etiqueta3",
+			tagsHint: "Etiquetas separadas por coma",
 		},
 
 		// Preview

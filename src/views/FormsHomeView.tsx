@@ -28,6 +28,9 @@ export function FormsHomeView() {
 	const { t } = useLanguage();
 	const [view, setView] = useState<ViewState>("list");
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
+	const [initialDetailTab, setInitialDetailTab] = useState<
+		"details" | "fieldLibrary"
+	>("details");
 
 	// Load forms on mount
 	useEffect(() => {
@@ -43,6 +46,7 @@ export function FormsHomeView() {
 
 	const handleViewForm = (formId: string) => {
 		setSelectedForm(formId);
+		setInitialDetailTab("details");
 		setView("detail");
 	};
 
@@ -67,8 +71,9 @@ export function FormsHomeView() {
 		try {
 			const newForm = await createForm(name, description);
 			setSelectedForm(newForm.id);
-			startEditing(newForm);
-			setView("editor");
+			// Navigate to detail view with field library tab to let user explore available fields
+			setInitialDetailTab("fieldLibrary");
+			setView("detail");
 		} catch {
 			// Error is already set in store and toasted via useEffect
 		}
@@ -129,6 +134,7 @@ export function FormsHomeView() {
 					{view === "detail" && (
 						<FormDetail
 							onBack={handleBack}
+							initialTab={initialDetailTab}
 							onEdit={() => {
 								const selectedForm = useFormStore.getState().selectedForm;
 								if (selectedForm) {

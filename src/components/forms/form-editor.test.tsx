@@ -26,6 +26,19 @@ vi.mock("@/components/forms/form-field-renderer", () => ({
 	),
 }));
 
+// Mock SessionControls to avoid auth dependencies
+vi.mock("@/components/SessionControls", () => ({
+	SessionControls: () => null,
+}));
+
+// Mock sonner
+vi.mock("sonner", () => ({
+	toast: {
+		info: vi.fn(),
+		error: vi.fn(),
+	},
+}));
+
 const mockForm = {
 	id: "form-1",
 	name: "Test Form",
@@ -70,7 +83,7 @@ describe("FormEditor", () => {
 		);
 
 		expect(container).toHaveTextContent("Test Form");
-		expect(container).toHaveTextContent("formEditor.editForm");
+		expect(container).toHaveTextContent("formEditor.editFields");
 	});
 
 	it("should call onBack when cancel button is clicked", () => {
