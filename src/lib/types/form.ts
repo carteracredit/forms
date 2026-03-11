@@ -131,9 +131,11 @@ export interface Form {
 	descriptionEs?: string;
 	/** Current status of the form */
 	status: FormStatus;
-	/** Current active version number */
+	/** Current active version number (0 until first publish). */
 	currentVersion: number;
-	/** All versions of the form */
+	/** Working draft fields not yet published. */
+	draftFields: FormField[];
+	/** Published version snapshots (immutable). */
 	versions: FormVersion[];
 	/** Creation timestamp */
 	createdAt: string;

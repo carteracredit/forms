@@ -8,7 +8,7 @@ import {
 	publishForm,
 	archiveForm,
 	listFormVersions,
-	createFormVersion,
+	saveFieldsDraft,
 	apiFormToForm,
 	apiFormSummaryToForm,
 } from "./forms";
@@ -56,11 +56,12 @@ function makeApiForm(overrides: Partial<ApiForm> = {}): ApiForm {
 		description: "A test form",
 		description_es: null,
 		status: "draft",
-		current_version: 1,
+		current_version: 0,
+		draft_fields: [],
 		tags: ["tag1"],
 		created_at: "2024-01-01T00:00:00Z",
 		updated_at: "2024-01-01T00:00:00Z",
-		versions: [makeApiVersion()],
+		versions: [],
 		...overrides,
 	};
 }
@@ -101,8 +102,9 @@ describe("forms API client", () => {
 			expect(form.name).toBe("Test Form");
 			expect(form.nameEs).toBe("Formulario de prueba");
 			expect(form.status).toBe("draft");
-			expect(form.currentVersion).toBe(1);
-			expect(form.versions).toHaveLength(1);
+			expect(form.currentVersion).toBe(0);
+			expect(form.versions).toHaveLength(0);
+			expect(form.draftFields).toEqual([]);
 		});
 
 		it("should handle null optional fields", () => {
@@ -312,29 +314,29 @@ describe("forms API client", () => {
 		});
 	});
 
-	describe("createFormVersion", () => {
-		it("should call POST /forms/:id/versions with payload", async () => {
-			const version = makeApiVersion({ id: "v2", version: 2 });
+	describe("saveFieldsDraft", () => {
+		it("should call PUT /forms/:id with fields payload", async () => {
+			const apiForm = makeApiForm({
+				draft_fields: [
+					{ id: "f1", type: "name", label: "Name", required: true },
+				],
+			});
 			vi.mocked(fetchJson).mockResolvedValue({
-				status: 201,
-				json: { success: true, result: version },
+				status: 200,
+				json: { success: true, result: apiForm },
 			});
 
-			const payload = {
-				fields: [],
-				schema: { input: {}, output: {} },
-				changelog: "Added new field",
-			};
-			const newVersion = await createFormVersion("form-1", payload);
+			const form = await saveFieldsDraft("form-1", {
+				fields: [{ id: "f1", type: "name", label: "Name", required: true }],
+			});
 
 			expect(fetchJson).toHaveBeenCalledWith(
-				"https://workflow-svc.test/forms/form-1/versions",
+				"https://workflow-svc.test/forms/form-1",
 				expect.objectContaining({
-					method: "POST",
-					body: JSON.stringify(payload),
+					method: "PUT",
 				}),
 			);
-			expect(newVersion.version).toBe(2);
+			expect(form.draftFields).toHaveLength(1);
 		});
 	});
 });

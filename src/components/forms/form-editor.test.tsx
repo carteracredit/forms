@@ -44,28 +44,21 @@ const mockForm = {
 	name: "Test Form",
 	description: "A test form",
 	status: "draft",
-	currentVersion: 1,
+	currentVersion: 0,
+	draftFields: [
+		{ id: "f1", type: "text", label: "Existing Field", required: true },
+	],
 	createdAt: "2024-01-01T00:00:00Z",
 	updatedAt: "2024-01-01T00:00:00Z",
 	tags: [],
-	versions: [
-		{
-			id: "v1",
-			version: 1,
-			createdAt: "2024-01-01T00:00:00Z",
-			createdBy: "Test User",
-			fields: [
-				{ id: "f1", type: "text", label: "Existing Field", required: true },
-			],
-			schema: { input: {}, output: {} },
-		},
-	],
+	versions: [],
 };
 
 vi.mock("@/lib/form-store", () => ({
 	useFormStore: () => ({
 		selectedForm: mockForm,
-		saveFormVersion: vi.fn(),
+		saveFieldsDraft: vi.fn(),
+		publishForm: vi.fn(),
 	}),
 }));
 
@@ -125,7 +118,8 @@ describe("FormEditor", () => {
 			<FormEditor onBack={onBack} onSave={onSave} />,
 		);
 
-		expect(container).toHaveTextContent("formEditor.saveVersion");
+		expect(container).toHaveTextContent("formEditor.saveDraft");
+		expect(container).toHaveTextContent("formEditor.publish");
 		expect(container).toHaveTextContent("formEditor.addField");
 	});
 });

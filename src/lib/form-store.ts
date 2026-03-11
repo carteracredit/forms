@@ -10,7 +10,7 @@ import {
 	deleteFormAction,
 	publishFormAction,
 	archiveFormAction,
-	createFormVersionAction,
+	saveFieldsDraftAction,
 } from "./api/forms-actions";
 import type { ListFormsOptions } from "./api/forms";
 
@@ -70,16 +70,11 @@ interface FormStore {
 
 	// Editing actions
 	/** Start editing a form */
-	startEditing: (form: Form, version?: FormVersion) => void;
+	startEditing: (form: Form) => void;
 	/** Cancel editing and discard changes */
 	cancelEditing: () => void;
-	/** Save the current editing state as a new version */
-	saveFormVersion: (
-		formId: string,
-		fields: FormField[],
-		changelog: string,
-		options?: { jwt?: string },
-	) => Promise<void>;
+	/** Save current editing fields as draft (no version created). */
+	saveFieldsDraft: (formId: string, fields: FormField[]) => Promise<void>;
 	/** Update the editing fields state */
 	updateEditingFields: (fields: FormField[]) => void;
 
@@ -92,20 +87,6 @@ interface FormStore {
 	deleteField: (fieldId: string) => void;
 	/** Reorder fields by moving a field from one index to another */
 	reorderFields: (startIndex: number, endIndex: number) => void;
-}
-
-/**
- * Builds the output schema from a list of fields.
- * Keys are field IDs, values are type strings.
- */
-function buildOutputSchema(fields: FormField[]): Record<string, unknown> {
-	return fields.reduce(
-		(acc, field) => {
-			acc[field.id] = field.type === "checkbox-group" ? "array" : "string";
-			return acc;
-		},
-		{} as Record<string, unknown>,
-	);
 }
 
 /**
@@ -158,10 +139,12 @@ export const useFormStore = create<FormStore>((set, get) => ({
 		}
 		const form = get().forms.find((f) => f.id === formId);
 		if (form) {
-			const currentVersion = form.versions.find(
-				(v) => v.version === form.currentVersion,
-			);
-			set({ selectedForm: form, selectedVersion: currentVersion ?? null });
+			// Select the latest published version (highest version number)
+			const latestVersion =
+				form.versions.length > 0
+					? form.versions.reduce((a, b) => (a.version > b.version ? a : b))
+					: null;
+			set({ selectedForm: form, selectedVersion: latestVersion });
 		}
 	},
 
@@ -236,6 +219,13 @@ export const useFormStore = create<FormStore>((set, get) => ({
 	publishForm: async (formId, options) => {
 		try {
 			const updatedForm = await publishFormAction(formId);
+			// Latest published version
+			const latestVersion =
+				updatedForm.versions.length > 0
+					? updatedForm.versions.reduce((a, b) =>
+							a.version > b.version ? a : b,
+						)
+					: null;
 			const current = get();
 			set({
 				forms: current.forms.map((f) => (f.id === formId ? updatedForm : f)),
@@ -243,6 +233,10 @@ export const useFormStore = create<FormStore>((set, get) => ({
 					current.selectedForm?.id === formId
 						? updatedForm
 						: current.selectedForm,
+				selectedVersion:
+					current.selectedForm?.id === formId
+						? latestVersion
+						: current.selectedVersion,
 			});
 		} catch (err) {
 			const message =
@@ -271,42 +265,22 @@ export const useFormStore = create<FormStore>((set, get) => ({
 		}
 	},
 
-	startEditing: (form, version) => {
-		const versionToEdit =
-			version || form.versions.find((v) => v.version === form.currentVersion);
-		if (versionToEdit) {
-			set({
-				isEditing: true,
-				selectedForm: form,
-				selectedVersion: versionToEdit,
-				editingFields: JSON.parse(JSON.stringify(versionToEdit.fields)),
-			});
-		}
+	startEditing: (form) => {
+		set({
+			isEditing: true,
+			selectedForm: form,
+			// Initialize editing from draft fields, not a version
+			editingFields: JSON.parse(JSON.stringify(form.draftFields)),
+		});
 	},
 
 	cancelEditing: () => {
 		set({ isEditing: false, editingFields: [] });
 	},
 
-	saveFormVersion: async (formId, fields, changelog, options) => {
-		const schema = {
-			input: {} as Record<string, unknown>,
-			output: buildOutputSchema(fields),
-		};
-
+	saveFieldsDraft: async (formId, fields) => {
 		try {
-			const newVersion = await createFormVersionAction(formId, {
-				fields,
-				schema,
-				changelog,
-			});
-
-			// Refresh the full form to get the updated current_version
-			const updatedForm = await getFormAction(formId);
-			const currentVersion = updatedForm.versions.find(
-				(v) => v.id === newVersion.id,
-			);
-
+			const updatedForm = await saveFieldsDraftAction(formId, { fields });
 			const current = get();
 			set({
 				forms: current.forms.map((f) => (f.id === formId ? updatedForm : f)),
@@ -314,13 +288,11 @@ export const useFormStore = create<FormStore>((set, get) => ({
 					current.selectedForm?.id === formId
 						? updatedForm
 						: current.selectedForm,
-				selectedVersion: currentVersion ?? newVersion,
-				isEditing: false,
-				editingFields: [],
+				editingFields: fields,
 			});
 		} catch (err) {
 			const message =
-				err instanceof Error ? err.message : "Failed to save form version";
+				err instanceof Error ? err.message : "Failed to save draft";
 			set({ error: message });
 			throw err;
 		}

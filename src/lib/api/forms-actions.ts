@@ -10,12 +10,12 @@ import {
 	publishForm,
 	archiveForm,
 	listFormVersions,
-	createFormVersion,
+	saveFieldsDraft,
 } from "./forms";
 import type {
 	CreateFormPayload,
 	UpdateFormPayload,
-	CreateFormVersionPayload,
+	SaveFieldsDraftPayload,
 	ListFormsOptions,
 } from "./forms";
 import type { Form, FormVersion } from "@/lib/types/form";
@@ -54,7 +54,7 @@ export async function createFormAction(
 }
 
 /**
- * Server action: update form metadata.
+ * Server action: update form metadata (name, description, tags).
  */
 export async function updateFormAction(
 	formId: string,
@@ -71,7 +71,17 @@ export async function deleteFormAction(formId: string): Promise<void> {
 }
 
 /**
- * Server action: publish a form.
+ * Server action: save draft fields without creating a published version.
+ */
+export async function saveFieldsDraftAction(
+	formId: string,
+	payload: SaveFieldsDraftPayload,
+): Promise<Form> {
+	return withJwt((jwt) => saveFieldsDraft(formId, payload, { jwt }));
+}
+
+/**
+ * Server action: publish a form — creates an immutable version snapshot.
  */
 export async function publishFormAction(formId: string): Promise<Form> {
 	return withJwt((jwt) => publishForm(formId, { jwt }));
@@ -85,20 +95,10 @@ export async function archiveFormAction(formId: string): Promise<Form> {
 }
 
 /**
- * Server action: list all versions of a form.
+ * Server action: list all published versions of a form.
  */
 export async function listFormVersionsAction(
 	formId: string,
 ): Promise<FormVersion[]> {
 	return withJwt((jwt) => listFormVersions(formId, { jwt }));
-}
-
-/**
- * Server action: create a new form version.
- */
-export async function createFormVersionAction(
-	formId: string,
-	payload: CreateFormVersionPayload,
-): Promise<FormVersion> {
-	return withJwt((jwt) => createFormVersion(formId, payload, { jwt }));
 }
