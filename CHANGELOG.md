@@ -1,3 +1,11 @@
+# [1.0.0-rc.8](https://github.com/carteracredit/forms/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2026-03-11)
+
+
+### Features
+
+* implement draft fields management and publishing functionality ([3d781d2](https://github.com/carteracredit/forms/commit/3d781d270349a3f39043925b5d5c3b802d7a34ac))
+* update form publishing functionality and UI enhancements ([5430ce9](https://github.com/carteracredit/forms/commit/5430ce997ada8cf8eb928bd95bc4e624f972d3a6))
+
 # [1.0.0-rc.7](https://github.com/carteracredit/forms/compare/v1.0.0-rc.6...v1.0.0-rc.7) (2026-03-11)
 
 
