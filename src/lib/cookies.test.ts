@@ -126,6 +126,38 @@ describe("cookies", () => {
 			expect(cookieValue).toContain("path=/");
 			expect(cookieValue).toContain("samesite=lax");
 		});
+
+		it("should not add secure flag for local environment", () => {
+			setCookie("test-cookie", "test-value");
+			expect(cookieValue).not.toContain("secure");
+		});
+
+		it("should add domain and secure flag for production environment", () => {
+			vi.stubGlobal("window", {
+				location: { hostname: "forms.cartera.credit" },
+			});
+			setCookie("test-cookie", "test-value");
+			expect(cookieValue).toContain("domain=.cartera.credit");
+			expect(cookieValue).toContain("secure");
+		});
+
+		it("should return early when document is undefined", () => {
+			vi.stubGlobal("document", undefined);
+			expect(() => setCookie("test", "value")).not.toThrow();
+		});
+
+		it("should use custom options when provided", () => {
+			setCookie("test-cookie", "test-value", {
+				maxAge: 3600,
+				path: "/custom",
+				sameSite: "strict",
+				secure: true,
+			});
+			expect(cookieValue).toContain("max-age=3600");
+			expect(cookieValue).toContain("path=/custom");
+			expect(cookieValue).toContain("samesite=strict");
+			expect(cookieValue).toContain("secure");
+		});
 	});
 
 	describe("getCookie", () => {
@@ -179,6 +211,19 @@ describe("cookies", () => {
 			deleteCookie("test-cookie");
 			expect(cookieValue).toContain("test-cookie=");
 			expect(cookieValue).toContain("max-age=0");
+		});
+
+		it("should include domain when deleting in production", () => {
+			vi.stubGlobal("window", {
+				location: { hostname: "forms.cartera.credit" },
+			});
+			deleteCookie("test-cookie");
+			expect(cookieValue).toContain("domain=.cartera.credit");
+		});
+
+		it("should return early when document is undefined", () => {
+			vi.stubGlobal("document", undefined);
+			expect(() => deleteCookie("test")).not.toThrow();
 		});
 	});
 

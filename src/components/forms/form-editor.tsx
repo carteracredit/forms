@@ -34,6 +34,8 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { FormFieldRenderer } from "@/components/forms/form-field-renderer";
+import { SessionControls } from "@/components/SessionControls";
+import { computeFieldsChecksum } from "@/lib/checksum";
 import {
 	ArrowLeft,
 	Plus,
@@ -63,6 +65,7 @@ import {
 	Code,
 	Pencil,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const fieldTypes: {
 	value: FormFieldType;
@@ -440,8 +443,28 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		setFields(fields.filter((f) => f.id !== fieldId));
 	};
 
-	const handleSaveVersion = () => {
+	const handleSaveVersion = async () => {
 		if (!changelog.trim()) return;
+
+		// Checksum: skip if fields are identical to current version
+		const currentVersion = selectedForm.versions.find(
+			(v) => v.version === selectedForm.currentVersion,
+		);
+		if (currentVersion) {
+			const [currentChecksum, newChecksum] = await Promise.all([
+				computeFieldsChecksum(currentVersion.fields),
+				computeFieldsChecksum(fields),
+			]);
+			if (currentChecksum === newChecksum) {
+				toast.info(t("formEditor.noChanges"), {
+					description: t("formEditor.noChangesDesc"),
+				});
+				setShowSaveDialog(false);
+				setChangelog("");
+				return;
+			}
+		}
+
 		saveFormVersion(selectedForm.id, fields, changelog);
 		setShowSaveDialog(false);
 		setChangelog("");
@@ -789,14 +812,14 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						<Separator orientation="vertical" className="h-6 hidden sm:block" />
 						<div className="min-w-0">
 							<h1 className="text-lg md:text-2xl font-semibold text-foreground truncate">
-								{t("formEditor.editForm")}
+								{t("formEditor.editFields")}
 							</h1>
 							<p className="text-xs md:text-sm text-muted-foreground truncate">
 								{selectedForm.name}
 							</p>
 						</div>
 					</div>
-					<div className="flex gap-2 flex-wrap">
+					<div className="flex gap-2 flex-wrap items-center">
 						<Button
 							variant="outline"
 							onClick={() => setShowLivePreview(!showLivePreview)}
@@ -835,6 +858,7 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 								{t("formEditor.saveVersion")}
 							</span>
 						</Button>
+						<SessionControls />
 					</div>
 				</div>
 				<Badge

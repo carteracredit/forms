@@ -18,6 +18,16 @@ vi.mock("@/components/LanguageProvider", () => ({
 	}),
 }));
 
+// Mock EditFormInfoDialog to avoid deep render chain
+vi.mock("./edit-form-info-dialog", () => ({
+	EditFormInfoDialog: () => null,
+}));
+
+// Mock SessionControls to avoid auth dependencies
+vi.mock("@/components/SessionControls", () => ({
+	SessionControls: () => null,
+}));
+
 const mockForm = {
 	id: "form-1",
 	name: "Test Form",
@@ -79,7 +89,7 @@ describe("FormDetail", () => {
 		expect(onBack).toHaveBeenCalled();
 	});
 
-	it("should call onEdit when edit button is clicked", () => {
+	it("should call onEdit when edit fields button is clicked", () => {
 		const onBack = vi.fn();
 		const onEdit = vi.fn();
 
@@ -87,7 +97,7 @@ describe("FormDetail", () => {
 			<FormDetail onBack={onBack} onEdit={onEdit} />,
 		);
 
-		const editButton = getByText("formDetail.editForm");
+		const editButton = getByText("formDetail.editFields");
 		fireEvent.click(editButton);
 
 		expect(onEdit).toHaveBeenCalled();
@@ -126,5 +136,27 @@ describe("FormDetail", () => {
 
 		const fieldLibraryTab = getByText("formDetail.fieldLibrary");
 		expect(fieldLibraryTab).toBeInTheDocument();
+	});
+
+	it("should render with fieldLibrary as initial tab when specified", () => {
+		const onBack = vi.fn();
+		const onEdit = vi.fn();
+
+		const { container } = render(
+			<FormDetail onBack={onBack} onEdit={onEdit} initialTab="fieldLibrary" />,
+		);
+
+		expect(container).toBeInTheDocument();
+	});
+
+	it("should show Edit Info button", () => {
+		const onBack = vi.fn();
+		const onEdit = vi.fn();
+
+		const { getByText } = render(
+			<FormDetail onBack={onBack} onEdit={onEdit} />,
+		);
+
+		expect(getByText("formDetail.editInfo")).toBeInTheDocument();
 	});
 });

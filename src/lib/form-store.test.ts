@@ -1,181 +1,476 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useFormStore } from "./form-store";
+import type { Form, FormVersion } from "./types/form";
+
+// ---------------------------------------------------------------------------
+// Mock server actions
+// ---------------------------------------------------------------------------
+
+vi.mock("./api/forms-actions", () => ({
+	listFormsAction: vi.fn(),
+	getFormAction: vi.fn(),
+	createFormAction: vi.fn(),
+	updateFormAction: vi.fn(),
+	deleteFormAction: vi.fn(),
+	publishFormAction: vi.fn(),
+	archiveFormAction: vi.fn(),
+	createFormVersionAction: vi.fn(),
+	listFormVersionsAction: vi.fn(),
+}));
+
+import * as formsActions from "./api/forms-actions";
+
+// ---------------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------------
+
+function makeVersion(overrides: Partial<FormVersion> = {}): FormVersion {
+	return {
+		id: "v1",
+		version: 1,
+		createdAt: new Date().toISOString(),
+		createdBy: "Test User",
+		fields: [],
+		schema: { input: {}, output: {} },
+		...overrides,
+	};
+}
+
+function makeForm(overrides: Partial<Form> = {}): Form {
+	return {
+		id: "1",
+		name: "Test Form",
+		description: "Test description",
+		status: "draft",
+		currentVersion: 1,
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
+		tags: [],
+		versions: [makeVersion()],
+		...overrides,
+	};
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
 describe("useFormStore", () => {
 	beforeEach(() => {
-		// Reset store to initial state before each test
+		vi.clearAllMocks();
 		useFormStore.setState({
 			forms: [],
 			selectedForm: null,
 			selectedVersion: null,
 			isEditing: false,
 			editingFields: [],
+			isLoading: false,
+			error: null,
+		});
+	});
+
+	describe("fetchForms", () => {
+		it("should load forms and clear loading state", async () => {
+			const mockForms = [makeForm()];
+			vi.mocked(formsActions.listFormsAction).mockResolvedValue(mockForms);
+
+			await useFormStore.getState().fetchForms();
+
+			const state = useFormStore.getState();
+			expect(state.forms).toHaveLength(1);
+			expect(state.isLoading).toBe(false);
+			expect(state.error).toBeNull();
+		});
+
+		it("should set error state on failure", async () => {
+			vi.mocked(formsActions.listFormsAction).mockRejectedValue(
+				new Error("Network error"),
+			);
+
+			await useFormStore.getState().fetchForms();
+
+			const state = useFormStore.getState();
+			expect(state.isLoading).toBe(false);
+			expect(state.error).toBe("Network error");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			vi.mocked(formsActions.listFormsAction).mockRejectedValue("string error");
+
+			await useFormStore.getState().fetchForms();
+
+			expect(useFormStore.getState().error).toBe("Failed to fetch forms");
 		});
 	});
 
 	describe("createForm", () => {
-		it("should create a new form with initial version", () => {
-			const { createForm, forms } = useFormStore.getState();
+		it("should create a new form and add it at the beginning", async () => {
+			const existingForm = makeForm({ id: "existing", name: "Existing" });
+			const newForm = makeForm({ id: "new", name: "New Form" });
+			useFormStore.setState({ forms: [existingForm] });
+			vi.mocked(formsActions.createFormAction).mockResolvedValue(newForm);
 
-			createForm("Test Form", "Test description");
+			await useFormStore.getState().createForm("New Form", "Description");
 
 			const state = useFormStore.getState();
-			expect(state.forms).toHaveLength(1);
-			expect(state.forms[0].name).toBe("Test Form");
-			expect(state.forms[0].description).toBe("Test description");
-			expect(state.forms[0].status).toBe("draft");
-			expect(state.forms[0].currentVersion).toBe(1);
-			expect(state.forms[0].versions).toHaveLength(1);
+			expect(state.forms).toHaveLength(2);
+			expect(state.forms[0].id).toBe("new");
+			expect(state.isLoading).toBe(false);
 		});
 
-		it("should add new form at the beginning of the list", () => {
-			const { createForm } = useFormStore.getState();
+		it("should throw and set error on failure", async () => {
+			vi.mocked(formsActions.createFormAction).mockRejectedValue(
+				new Error("Create failed"),
+			);
 
-			createForm("First Form", "First description");
-			createForm("Second Form", "Second description");
+			await expect(
+				useFormStore.getState().createForm("Test", "Desc"),
+			).rejects.toThrow("Create failed");
+
+			expect(useFormStore.getState().error).toBe("Create failed");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			vi.mocked(formsActions.createFormAction).mockRejectedValue(
+				"string error",
+			);
+
+			await expect(
+				useFormStore.getState().createForm("Test", "Desc"),
+			).rejects.toBe("string error");
+
+			expect(useFormStore.getState().error).toBe("Failed to create form");
+		});
+	});
+
+	describe("refreshForm", () => {
+		it("should refresh a form in the list", async () => {
+			const form = makeForm();
+			const refreshed = { ...form, name: "Refreshed Form" };
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.getFormAction).mockResolvedValue(refreshed);
+
+			await useFormStore.getState().refreshForm("1");
 
 			const state = useFormStore.getState();
-			expect(state.forms[0].name).toBe("Second Form");
-			expect(state.forms[1].name).toBe("First Form");
+			expect(state.forms[0].name).toBe("Refreshed Form");
+			expect(state.selectedForm?.name).toBe("Refreshed Form");
+		});
+
+		it("should not update selectedForm if a different form is selected", async () => {
+			const form = makeForm();
+			const otherForm = makeForm({ id: "other", name: "Other Form" });
+			const refreshed = { ...form, name: "Refreshed Form" };
+			useFormStore.setState({ forms: [form], selectedForm: otherForm });
+			vi.mocked(formsActions.getFormAction).mockResolvedValue(refreshed);
+
+			await useFormStore.getState().refreshForm("1");
+
+			expect(useFormStore.getState().selectedForm?.id).toBe("other");
+		});
+
+		it("should set error on failure", async () => {
+			vi.mocked(formsActions.getFormAction).mockRejectedValue(
+				new Error("Refresh failed"),
+			);
+
+			await useFormStore.getState().refreshForm("1");
+
+			expect(useFormStore.getState().error).toBe("Refresh failed");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			vi.mocked(formsActions.getFormAction).mockRejectedValue("string error");
+
+			await useFormStore.getState().refreshForm("1");
+
+			expect(useFormStore.getState().error).toBe("Failed to refresh form");
 		});
 	});
 
 	describe("setSelectedForm", () => {
-		it("should select a form by id", () => {
-			useFormStore.setState({
-				forms: [
-					{
-						id: "1",
-						name: "Test Form",
-						description: "Test",
-						status: "draft",
-						currentVersion: 1,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-						tags: [],
-						versions: [
-							{
-								id: "v1",
-								version: 1,
-								createdAt: new Date().toISOString(),
-								createdBy: "Test User",
-								fields: [],
-								schema: { input: {}, output: {} },
-							},
-						],
-					},
-				],
-			});
+		it("should select a form by id and set its current version", () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form] });
 
-			const { setSelectedForm } = useFormStore.getState();
-			setSelectedForm("1");
+			useFormStore.getState().setSelectedForm("1");
 
 			const state = useFormStore.getState();
-			expect(state.selectedForm).not.toBeNull();
 			expect(state.selectedForm?.id).toBe("1");
 			expect(state.selectedVersion?.version).toBe(1);
 		});
 
 		it("should clear selection when passed null", () => {
-			const { setSelectedForm } = useFormStore.getState();
-			setSelectedForm(null);
+			useFormStore.getState().setSelectedForm(null);
 
 			const state = useFormStore.getState();
 			expect(state.selectedForm).toBeNull();
 			expect(state.selectedVersion).toBeNull();
 		});
+
+		it("should do nothing when form id is not found", () => {
+			useFormStore.setState({ forms: [], selectedForm: null });
+			useFormStore.getState().setSelectedForm("nonexistent");
+			expect(useFormStore.getState().selectedForm).toBeNull();
+		});
+
+		it("should set selectedVersion to null when form has no matching version", () => {
+			const form = makeForm({ currentVersion: 99, versions: [] });
+			useFormStore.setState({ forms: [form] });
+			useFormStore.getState().setSelectedForm("1");
+			expect(useFormStore.getState().selectedVersion).toBeNull();
+		});
 	});
 
 	describe("deleteForm", () => {
-		it("should remove a form from the list", () => {
-			useFormStore.setState({
-				forms: [
-					{
-						id: "1",
-						name: "Test Form",
-						description: "Test",
-						status: "draft",
-						currentVersion: 1,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-						tags: [],
-						versions: [],
-					},
-				],
-			});
+		it("should remove a form from the list", async () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form] });
+			vi.mocked(formsActions.deleteFormAction).mockResolvedValue(undefined);
 
-			const { deleteForm } = useFormStore.getState();
-			deleteForm("1");
+			await useFormStore.getState().deleteForm("1");
 
-			const state = useFormStore.getState();
-			expect(state.forms).toHaveLength(0);
+			expect(useFormStore.getState().forms).toHaveLength(0);
+		});
+
+		it("should clear selection if the deleted form was selected", async () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.deleteFormAction).mockResolvedValue(undefined);
+
+			await useFormStore.getState().deleteForm("1");
+
+			expect(useFormStore.getState().selectedForm).toBeNull();
+		});
+
+		it("should throw and set error on failure", async () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form] });
+			vi.mocked(formsActions.deleteFormAction).mockRejectedValue(
+				new Error("Delete failed"),
+			);
+
+			await expect(useFormStore.getState().deleteForm("1")).rejects.toThrow(
+				"Delete failed",
+			);
+
+			expect(useFormStore.getState().error).toBe("Delete failed");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form] });
+			vi.mocked(formsActions.deleteFormAction).mockRejectedValue(
+				"string error",
+			);
+
+			await expect(useFormStore.getState().deleteForm("1")).rejects.toBe(
+				"string error",
+			);
+
+			expect(useFormStore.getState().error).toBe("Failed to delete form");
 		});
 	});
 
 	describe("updateForm", () => {
-		it("should update form properties", () => {
-			useFormStore.setState({
-				forms: [
-					{
-						id: "1",
-						name: "Test Form",
-						description: "Test",
-						status: "draft",
-						currentVersion: 1,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-						tags: [],
-						versions: [],
-					},
-				],
-			});
+		it("should update form in list and selectedForm", async () => {
+			const form = makeForm();
+			const updated = { ...form, name: "Updated Form" };
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.updateFormAction).mockResolvedValue(updated);
 
-			const { updateForm } = useFormStore.getState();
-			updateForm("1", { name: "Updated Form", status: "published" });
+			await useFormStore.getState().updateForm("1", { name: "Updated Form" });
 
 			const state = useFormStore.getState();
 			expect(state.forms[0].name).toBe("Updated Form");
-			expect(state.forms[0].status).toBe("published");
+			expect(state.selectedForm?.name).toBe("Updated Form");
+		});
+
+		it("should not update selectedForm if a different form is selected", async () => {
+			const form = makeForm();
+			const otherForm = makeForm({ id: "other" });
+			const updated = { ...form, name: "Updated Form" };
+			useFormStore.setState({ forms: [form], selectedForm: otherForm });
+			vi.mocked(formsActions.updateFormAction).mockResolvedValue(updated);
+
+			await useFormStore.getState().updateForm("1", { name: "Updated Form" });
+
+			expect(useFormStore.getState().selectedForm?.id).toBe("other");
+		});
+
+		it("should throw and set error on failure", async () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form] });
+			vi.mocked(formsActions.updateFormAction).mockRejectedValue(
+				new Error("Update failed"),
+			);
+
+			await expect(
+				useFormStore.getState().updateForm("1", { name: "X" }),
+			).rejects.toThrow("Update failed");
+
+			expect(useFormStore.getState().error).toBe("Update failed");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form] });
+			vi.mocked(formsActions.updateFormAction).mockRejectedValue(
+				"string error",
+			);
+
+			await expect(
+				useFormStore.getState().updateForm("1", { name: "X" }),
+			).rejects.toBe("string error");
+
+			expect(useFormStore.getState().error).toBe("Failed to update form");
+		});
+	});
+
+	describe("publishForm", () => {
+		it("should update form status to published", async () => {
+			const form = makeForm();
+			const published = { ...form, status: "published" as const };
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.publishFormAction).mockResolvedValue(published);
+
+			await useFormStore.getState().publishForm("1");
+
+			expect(useFormStore.getState().forms[0].status).toBe("published");
+		});
+
+		it("should not update selectedForm if a different form is selected", async () => {
+			const form = makeForm();
+			const otherForm = makeForm({ id: "other" });
+			const published = { ...form, status: "published" as const };
+			useFormStore.setState({ forms: [form], selectedForm: otherForm });
+			vi.mocked(formsActions.publishFormAction).mockResolvedValue(published);
+
+			await useFormStore.getState().publishForm("1");
+
+			expect(useFormStore.getState().selectedForm?.id).toBe("other");
+		});
+
+		it("should set error on failure", async () => {
+			vi.mocked(formsActions.publishFormAction).mockRejectedValue(
+				new Error("Publish failed"),
+			);
+
+			await expect(useFormStore.getState().publishForm("1")).rejects.toThrow(
+				"Publish failed",
+			);
+
+			expect(useFormStore.getState().error).toBe("Publish failed");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			vi.mocked(formsActions.publishFormAction).mockRejectedValue(
+				"string error",
+			);
+
+			await expect(useFormStore.getState().publishForm("1")).rejects.toBe(
+				"string error",
+			);
+
+			expect(useFormStore.getState().error).toBe("Failed to publish form");
+		});
+	});
+
+	describe("archiveForm", () => {
+		it("should update form status to archived", async () => {
+			const form = makeForm({ status: "published" });
+			const archived = { ...form, status: "archived" as const };
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.archiveFormAction).mockResolvedValue(archived);
+
+			await useFormStore.getState().archiveForm("1");
+
+			expect(useFormStore.getState().forms[0].status).toBe("archived");
+		});
+
+		it("should not update selectedForm if a different form is selected", async () => {
+			const form = makeForm({ status: "published" });
+			const otherForm = makeForm({ id: "other" });
+			const archived = { ...form, status: "archived" as const };
+			useFormStore.setState({ forms: [form], selectedForm: otherForm });
+			vi.mocked(formsActions.archiveFormAction).mockResolvedValue(archived);
+
+			await useFormStore.getState().archiveForm("1");
+
+			expect(useFormStore.getState().selectedForm?.id).toBe("other");
+		});
+
+		it("should set error on failure", async () => {
+			vi.mocked(formsActions.archiveFormAction).mockRejectedValue(
+				new Error("Archive failed"),
+			);
+
+			await expect(useFormStore.getState().archiveForm("1")).rejects.toThrow(
+				"Archive failed",
+			);
+
+			expect(useFormStore.getState().error).toBe("Archive failed");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			vi.mocked(formsActions.archiveFormAction).mockRejectedValue(
+				"string error",
+			);
+
+			await expect(useFormStore.getState().archiveForm("1")).rejects.toBe(
+				"string error",
+			);
+
+			expect(useFormStore.getState().error).toBe("Failed to archive form");
 		});
 	});
 
 	describe("startEditing", () => {
 		it("should set editing state with form fields", () => {
-			const testForm = {
-				id: "1",
-				name: "Test Form",
-				description: "Test",
-				status: "draft" as const,
-				currentVersion: 1,
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-				tags: [],
+			const form = makeForm({
 				versions: [
-					{
-						id: "v1",
-						version: 1,
-						createdAt: new Date().toISOString(),
-						createdBy: "Test User",
+					makeVersion({
 						fields: [
-							{
-								id: "f1",
-								type: "text" as const,
-								label: "Test Field",
-								required: true,
-							},
+							{ id: "f1", type: "text", label: "Test Field", required: true },
 						],
-						schema: { input: {}, output: {} },
-					},
+					}),
 				],
-			};
+			});
 
-			const { startEditing } = useFormStore.getState();
-			startEditing(testForm);
+			useFormStore.getState().startEditing(form);
 
 			const state = useFormStore.getState();
 			expect(state.isEditing).toBe(true);
 			expect(state.editingFields).toHaveLength(1);
 			expect(state.editingFields[0].label).toBe("Test Field");
+		});
+
+		it("should use provided version when given", () => {
+			const form = makeForm({
+				versions: [
+					makeVersion({ id: "v1", version: 1, fields: [] }),
+					makeVersion({
+						id: "v2",
+						version: 2,
+						fields: [
+							{ id: "f1", type: "text", label: "V2 Field", required: false },
+						],
+					}),
+				],
+			});
+			const specificVersion = form.versions[1];
+
+			useFormStore.getState().startEditing(form, specificVersion);
+
+			expect(useFormStore.getState().editingFields[0].label).toBe("V2 Field");
+		});
+
+		it("should not set editing state when form has no matching version", () => {
+			const form = makeForm({ currentVersion: 99, versions: [] });
+
+			useFormStore.getState().startEditing(form);
+
+			expect(useFormStore.getState().isEditing).toBe(false);
 		});
 	});
 
@@ -188,8 +483,7 @@ describe("useFormStore", () => {
 				],
 			});
 
-			const { cancelEditing } = useFormStore.getState();
-			cancelEditing();
+			useFormStore.getState().cancelEditing();
 
 			const state = useFormStore.getState();
 			expect(state.isEditing).toBe(false);
@@ -201,12 +495,34 @@ describe("useFormStore", () => {
 		it("should add a field to editing fields", () => {
 			useFormStore.setState({ editingFields: [] });
 
-			const { addField } = useFormStore.getState();
-			addField({ id: "f1", type: "text", label: "New Field", required: false });
+			useFormStore.getState().addField({
+				id: "f1",
+				type: "text",
+				label: "New Field",
+				required: false,
+			});
 
 			const state = useFormStore.getState();
 			expect(state.editingFields).toHaveLength(1);
 			expect(state.editingFields[0].label).toBe("New Field");
+		});
+	});
+
+	describe("updateEditingFields", () => {
+		it("should replace editing fields", () => {
+			useFormStore.setState({
+				editingFields: [
+					{ id: "f1", type: "text", label: "Old", required: false },
+				],
+			});
+
+			const newFields = [
+				{ id: "f2", type: "email" as const, label: "New", required: true },
+			];
+			useFormStore.getState().updateEditingFields(newFields);
+
+			expect(useFormStore.getState().editingFields).toHaveLength(1);
+			expect(useFormStore.getState().editingFields[0].id).toBe("f2");
 		});
 	});
 
@@ -218,11 +534,9 @@ describe("useFormStore", () => {
 				],
 			});
 
-			const { updateField } = useFormStore.getState();
-			updateField("f1", { label: "Updated" });
+			useFormStore.getState().updateField("f1", { label: "Updated" });
 
-			const state = useFormStore.getState();
-			expect(state.editingFields[0].label).toBe("Updated");
+			expect(useFormStore.getState().editingFields[0].label).toBe("Updated");
 		});
 	});
 
@@ -235,8 +549,7 @@ describe("useFormStore", () => {
 				],
 			});
 
-			const { deleteField } = useFormStore.getState();
-			deleteField("f1");
+			useFormStore.getState().deleteField("f1");
 
 			const state = useFormStore.getState();
 			expect(state.editingFields).toHaveLength(1);
@@ -254,8 +567,7 @@ describe("useFormStore", () => {
 				],
 			});
 
-			const { reorderFields } = useFormStore.getState();
-			reorderFields(0, 2); // Move first to last
+			useFormStore.getState().reorderFields(0, 2);
 
 			const state = useFormStore.getState();
 			expect(state.editingFields[0].id).toBe("f2");
@@ -265,152 +577,183 @@ describe("useFormStore", () => {
 	});
 
 	describe("saveFormVersion", () => {
-		it("should create a new version of the form", () => {
-			useFormStore.setState({
-				forms: [
-					{
-						id: "1",
-						name: "Test Form",
-						description: "Test",
-						status: "draft",
-						currentVersion: 1,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-						tags: [],
-						versions: [
-							{
-								id: "v1",
-								version: 1,
-								createdAt: new Date().toISOString(),
-								createdBy: "Test User",
-								fields: [],
-								schema: { input: {}, output: {} },
-							},
-						],
-					},
-				],
-				editingFields: [
-					{ id: "f1", type: "text", label: "New Field", required: true },
-				],
+		it("should create a new version with checkbox-group fields (array schema)", async () => {
+			const form = makeForm();
+			const newVersion = makeVersion({ id: "v2", version: 2 });
+			const updatedForm = makeForm({
+				currentVersion: 2,
+				versions: [makeVersion(), newVersion],
 			});
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.createFormVersionAction).mockResolvedValue(
+				newVersion,
+			);
+			vi.mocked(formsActions.getFormAction).mockResolvedValue(updatedForm);
 
-			const { saveFormVersion } = useFormStore.getState();
-			const fields = useFormStore.getState().editingFields;
-			saveFormVersion("1", fields, "Added new field");
+			const checkboxGroupField = {
+				id: "cg1",
+				type: "checkbox-group" as const,
+				label: "Options",
+				required: false,
+			};
+			await useFormStore
+				.getState()
+				.saveFormVersion("1", [checkboxGroupField], "Test");
+
+			expect(
+				vi.mocked(formsActions.createFormVersionAction).mock.calls[0][1].schema
+					.output,
+			).toEqual({
+				cg1: "array",
+			});
+		});
+
+		it("should create a new version and refresh the form", async () => {
+			const form = makeForm();
+			const newVersion = makeVersion({ id: "v2", version: 2 });
+			const updatedForm = makeForm({
+				currentVersion: 2,
+				versions: [makeVersion(), newVersion],
+			});
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.createFormVersionAction).mockResolvedValue(
+				newVersion,
+			);
+			vi.mocked(formsActions.getFormAction).mockResolvedValue(updatedForm);
+
+			await useFormStore.getState().saveFormVersion("1", [], "Added new field");
 
 			const state = useFormStore.getState();
 			expect(state.forms[0].currentVersion).toBe(2);
-			expect(state.forms[0].versions).toHaveLength(2);
-			expect(state.forms[0].versions[1].changelog).toBe("Added new field");
-			expect(state.forms[0].versions[1].fields).toHaveLength(1);
 			expect(state.isEditing).toBe(false);
+			expect(state.editingFields).toHaveLength(0);
 		});
 
-		it("should not save version if form not found", () => {
-			useFormStore.setState({
-				forms: [],
-				editingFields: [
-					{ id: "f1", type: "text", label: "New Field", required: true },
-				],
+		it("should update selectedVersion to the new version when found", async () => {
+			const form = makeForm();
+			const newVersion = makeVersion({ id: "v2", version: 2 });
+			const updatedForm = makeForm({
+				currentVersion: 2,
+				versions: [makeVersion(), newVersion],
 			});
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.createFormVersionAction).mockResolvedValue(
+				newVersion,
+			);
+			vi.mocked(formsActions.getFormAction).mockResolvedValue(updatedForm);
 
-			const { saveFormVersion } = useFormStore.getState();
-			const fields = useFormStore.getState().editingFields;
-			saveFormVersion("nonexistent", fields, "Test");
+			await useFormStore.getState().saveFormVersion("1", [], "Test");
 
-			const state = useFormStore.getState();
-			expect(state.forms).toHaveLength(0);
+			expect(useFormStore.getState().selectedVersion?.id).toBe("v2");
+		});
+
+		it("should fallback to new version when not found in refreshed form", async () => {
+			const form = makeForm();
+			const newVersion = makeVersion({ id: "v2", version: 2 });
+			const updatedForm = makeForm({
+				currentVersion: 2,
+				versions: [makeVersion()],
+			});
+			useFormStore.setState({ forms: [form], selectedForm: form });
+			vi.mocked(formsActions.createFormVersionAction).mockResolvedValue(
+				newVersion,
+			);
+			vi.mocked(formsActions.getFormAction).mockResolvedValue(updatedForm);
+
+			await useFormStore.getState().saveFormVersion("1", [], "Test");
+
+			expect(useFormStore.getState().selectedVersion?.id).toBe("v2");
+		});
+
+		it("should not update selectedForm if a different form is selected", async () => {
+			const form = makeForm();
+			const otherForm = makeForm({ id: "other" });
+			const newVersion = makeVersion({ id: "v2", version: 2 });
+			const updatedForm = makeForm({
+				currentVersion: 2,
+				versions: [makeVersion(), newVersion],
+			});
+			useFormStore.setState({ forms: [form], selectedForm: otherForm });
+			vi.mocked(formsActions.createFormVersionAction).mockResolvedValue(
+				newVersion,
+			);
+			vi.mocked(formsActions.getFormAction).mockResolvedValue(updatedForm);
+
+			await useFormStore.getState().saveFormVersion("1", [], "Test");
+
+			expect(useFormStore.getState().selectedForm?.id).toBe("other");
+		});
+
+		it("should throw and set error on failure", async () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form] });
+			vi.mocked(formsActions.createFormVersionAction).mockRejectedValue(
+				new Error("Save failed"),
+			);
+
+			await expect(
+				useFormStore.getState().saveFormVersion("1", [], "Test"),
+			).rejects.toThrow("Save failed");
+
+			expect(useFormStore.getState().error).toBe("Save failed");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			const form = makeForm();
+			useFormStore.setState({ forms: [form] });
+			vi.mocked(formsActions.createFormVersionAction).mockRejectedValue(
+				"string error",
+			);
+
+			await expect(
+				useFormStore.getState().saveFormVersion("1", [], "Test"),
+			).rejects.toBe("string error");
+
+			expect(useFormStore.getState().error).toBe("Failed to save form version");
 		});
 	});
 
 	describe("setSelectedVersion", () => {
 		it("should set selected version by id", () => {
-			const version1 = {
-				id: "v1",
-				version: 1,
-				createdAt: new Date().toISOString(),
-				createdBy: "User",
-				fields: [],
-				schema: { input: {}, output: {} },
-			};
-			const version2 = {
-				id: "v2",
-				version: 2,
-				createdAt: new Date().toISOString(),
-				createdBy: "User",
-				fields: [],
-				schema: { input: {}, output: {} },
-			};
-
-			useFormStore.setState({
-				selectedForm: {
-					id: "1",
-					name: "Test",
-					description: "",
-					status: "draft",
-					currentVersion: 2,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
-					tags: [],
-					versions: [version1, version2],
-				},
-				selectedVersion: version2,
+			const version1 = makeVersion({ id: "v1", version: 1 });
+			const version2 = makeVersion({ id: "v2", version: 2 });
+			const form = makeForm({
+				currentVersion: 2,
+				versions: [version1, version2],
 			});
+			useFormStore.setState({ selectedForm: form, selectedVersion: version2 });
 
-			const { setSelectedVersion } = useFormStore.getState();
-			setSelectedVersion("v1");
+			useFormStore.getState().setSelectedVersion("v1");
 
 			expect(useFormStore.getState().selectedVersion?.version).toBe(1);
 		});
-	});
 
-	describe("updateForm edge cases", () => {
-		it("should not update if form not found", () => {
-			useFormStore.setState({
-				forms: [
-					{
-						id: "1",
-						name: "Test",
-						description: "",
-						status: "draft",
-						currentVersion: 1,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-						tags: [],
-						versions: [],
-					},
-				],
-			});
+		it("should do nothing when there is no selected form", () => {
+			useFormStore.setState({ selectedForm: null, selectedVersion: null });
 
-			const { updateForm } = useFormStore.getState();
-			updateForm("nonexistent", { name: "Updated" });
+			useFormStore.getState().setSelectedVersion("v1");
 
-			expect(useFormStore.getState().forms[0].name).toBe("Test");
+			expect(useFormStore.getState().selectedVersion).toBeNull();
 		});
-	});
 
-	describe("deleteForm edge cases", () => {
-		it("should handle deleting non-existent form gracefully", () => {
-			useFormStore.setState({
-				forms: [
-					{
-						id: "1",
-						name: "Test",
-						description: "",
-						status: "draft",
-						currentVersion: 1,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-						tags: [],
-						versions: [],
-					},
-				],
-			});
+		it("should do nothing when versionId is null", () => {
+			const form = makeForm();
+			const version = makeVersion();
+			useFormStore.setState({ selectedForm: form, selectedVersion: version });
 
-			const { deleteForm } = useFormStore.getState();
-			deleteForm("nonexistent");
+			useFormStore.getState().setSelectedVersion(null);
 
-			expect(useFormStore.getState().forms).toHaveLength(1);
+			expect(useFormStore.getState().selectedVersion).toBe(version);
+		});
+
+		it("should do nothing when version is not found", () => {
+			const form = makeForm();
+			const version = makeVersion();
+			useFormStore.setState({ selectedForm: form, selectedVersion: version });
+
+			useFormStore.getState().setSelectedVersion("nonexistent");
+
+			expect(useFormStore.getState().selectedVersion).toBe(version);
 		});
 	});
 });
