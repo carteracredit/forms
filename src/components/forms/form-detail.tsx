@@ -18,6 +18,10 @@ import {
 	Eye,
 	Info,
 	Plus,
+	Upload,
+	Archive,
+	Rocket,
+	RefreshCw,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -27,11 +31,19 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldShowcase } from "./field-showcase";
 import { SessionControls } from "@/components/SessionControls";
 import { EditFormInfoDialog } from "./edit-form-info-dialog";
+import { toast } from "sonner";
 
 interface FormDetailProps {
 	onBack: () => void;
@@ -45,17 +57,27 @@ export function FormDetail({
 	onEdit,
 	initialTab = "details",
 }: FormDetailProps) {
-	const { selectedForm, selectedVersion, setSelectedVersion } = useFormStore();
+	const {
+		selectedForm,
+		selectedVersion,
+		setSelectedVersion,
+		publishForm,
+		archiveForm,
+	} = useFormStore();
 	const { t, language, getFieldLabel } = useLanguage();
 	const router = useRouter();
 	const [showVersions, setShowVersions] = useState(false);
 	const [showInputSchema, setShowInputSchema] = useState(false);
 	const [showOutputSchema, setShowOutputSchema] = useState(true);
 	const [showEditInfoDialog, setShowEditInfoDialog] = useState(false);
+	const [showPublishDialog, setShowPublishDialog] = useState(false);
+	const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+	const [isPublishing, setIsPublishing] = useState(false);
+	const [isArchiving, setIsArchiving] = useState(false);
 
 	const dateLocale = language === "es" ? es : enUS;
 
-	if (!selectedForm || !selectedVersion) {
+	if (!selectedForm) {
 		return (
 			<div className="flex items-center justify-center h-full">
 				<p className="text-muted-foreground">
@@ -64,6 +86,32 @@ export function FormDetail({
 			</div>
 		);
 	}
+
+	const handlePublish = async () => {
+		setIsPublishing(true);
+		try {
+			await publishForm(selectedForm.id);
+			toast.success(t("formDetail.publishSuccess"));
+			setShowPublishDialog(false);
+		} catch {
+			toast.error(t("formDetail.publishError"));
+		} finally {
+			setIsPublishing(false);
+		}
+	};
+
+	const handleArchive = async () => {
+		setIsArchiving(true);
+		try {
+			await archiveForm(selectedForm.id);
+			toast.success(t("formDetail.archiveSuccess"));
+			setShowArchiveDialog(false);
+		} catch {
+			toast.error(t("formDetail.archiveError"));
+		} finally {
+			setIsArchiving(false);
+		}
+	};
 
 	const getStatusColor = (status: string) => {
 		switch (status) {
@@ -81,6 +129,15 @@ export function FormDetail({
 	const getFieldTypeLabel = (type: string) => {
 		return t(`fieldTypes.${type}`);
 	};
+
+	// Working draft fields (what the user is editing)
+	const displayFields = selectedForm.draftFields;
+
+	// Latest published version for schema display
+	const latestPublishedVersion =
+		selectedForm.versions.length > 0
+			? selectedForm.versions.reduce((a, b) => (a.version > b.version ? a : b))
+			: null;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -118,10 +175,43 @@ export function FormDetail({
 							<Eye className="h-4 w-4" />
 							{t("formDetail.previewForm")}
 						</Button>
-						<Button onClick={onEdit} className="gap-2">
-							<Edit className="h-4 w-4" />
-							{t("formDetail.editFields")}
-						</Button>
+						{selectedForm.status === "draft" && (
+							<>
+								<Button onClick={onEdit} variant="outline" className="gap-2">
+									<Edit className="h-4 w-4" />
+									{t("formDetail.editFields")}
+								</Button>
+								<Button
+									onClick={() => setShowPublishDialog(true)}
+									className="gap-2"
+									disabled={selectedForm.draftFields.length === 0}
+									title={
+										selectedForm.draftFields.length === 0
+											? t("formEditor.noFieldsToPublish")
+											: t("formDetail.publishForm")
+									}
+								>
+									<Rocket className="h-4 w-4" />
+									{t("formDetail.publish")}
+								</Button>
+							</>
+						)}
+						{selectedForm.status === "published" && (
+							<>
+								<Button onClick={onEdit} variant="outline" className="gap-2">
+									<Edit className="h-4 w-4" />
+									{t("formDetail.editFields")}
+								</Button>
+								<Button
+									variant="destructive"
+									onClick={() => setShowArchiveDialog(true)}
+									className="gap-2"
+								>
+									<Archive className="h-4 w-4" />
+									{t("formDetail.archive")}
+								</Button>
+							</>
+						)}
 						<SessionControls />
 					</div>
 				</div>
@@ -133,12 +223,16 @@ export function FormDetail({
 					>
 						{t(`status.${selectedForm.status}`)}
 					</Badge>
-					<Badge variant="outline">
-						{t("common.version")} {selectedVersion.version}
-					</Badge>
-					<span className="text-sm text-muted-foreground">
-						{selectedForm.tags.join(", ")}
-					</span>
+					{selectedForm.currentVersion > 0 && (
+						<Badge variant="outline">
+							{t("common.version")} {selectedForm.currentVersion}
+						</Badge>
+					)}
+					{selectedForm.tags.length > 0 && (
+						<span className="text-sm text-muted-foreground">
+							{selectedForm.tags.join(", ")}
+						</span>
+					)}
 				</div>
 			</div>
 
@@ -156,28 +250,30 @@ export function FormDetail({
 						</TabsList>
 
 						<TabsContent value="details" className="space-y-6">
-							{/* Form Fields */}
+							{/* Draft Fields */}
 							<Card className="p-6">
 								<h2 className="text-lg font-semibold mb-4">
-									{t("formDetail.formFields")}
+									{t("formDetail.draftFields")}
 								</h2>
-								{selectedVersion.fields.length === 0 ? (
+								{displayFields.length === 0 ? (
 									<div className="text-center py-12 border-2 border-dashed rounded-lg">
 										<p className="text-sm text-muted-foreground mb-4">
-											{t("formDetail.noFieldsConfigured")}
+											{t("formDetail.noDraftFields")}
 										</p>
-										<Button
-											onClick={onEdit}
-											variant="outline"
-											className="gap-2"
-										>
-											<Plus className="h-4 w-4" />
-											{t("formDetail.goToEditor")}
-										</Button>
+										{selectedForm.status !== "archived" && (
+											<Button
+												onClick={onEdit}
+												variant="outline"
+												className="gap-2"
+											>
+												<Plus className="h-4 w-4" />
+												{t("formDetail.goToEditor")}
+											</Button>
+										)}
 									</div>
 								) : (
 									<div className="space-y-3">
-										{selectedVersion.fields.map((field, index) => (
+										{displayFields.map((field, index) => (
 											<div
 												key={field.id}
 												className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
@@ -223,183 +319,199 @@ export function FormDetail({
 								)}
 							</Card>
 
-							{/* Schema Management */}
-							<Card className="p-6">
-								<h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-									<FileJson className="h-5 w-5" />
-									{t("formDetail.schemaManagement")}
-								</h2>
+							{/* Schema Management (only when there's a published version) */}
+							{latestPublishedVersion && (
+								<Card className="p-6">
+									<h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+										<FileJson className="h-5 w-5" />
+										{t("formDetail.schemaManagement")}
+									</h2>
 
-								<div className="space-y-4">
-									{/* Input Schema */}
-									<Collapsible
-										open={showInputSchema}
-										onOpenChange={setShowInputSchema}
-									>
-										<CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-											<div className="flex items-center gap-2">
-												<Code className="h-4 w-4 text-blue-600" />
-												<span className="font-medium">
-													{t("formDetail.inputSchema")}
-												</span>
-												<Badge className="text-xs bg-teal-500/20 text-teal-700 dark:text-teal-300 hover:bg-teal-500/30 border-teal-500/30">
-													{t("formDetail.preFillData")}
-												</Badge>
-											</div>
-											<ChevronDown
-												className={`h-4 w-4 transition-transform ${showInputSchema ? "rotate-180" : ""}`}
-											/>
-										</CollapsibleTrigger>
-										<CollapsibleContent className="mt-2">
-											<div className="p-4 rounded-lg bg-muted/50 border">
-												<p className="text-xs text-muted-foreground mb-2">
-													{t("formDetail.inputSchemaDesc")}
-												</p>
-												<pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
-													<code>
-														{JSON.stringify(
-															selectedVersion.schema.input,
-															null,
-															2,
-														)}
-													</code>
-												</pre>
-											</div>
-										</CollapsibleContent>
-									</Collapsible>
+									<div className="space-y-4">
+										{/* Input Schema */}
+										<Collapsible
+											open={showInputSchema}
+											onOpenChange={setShowInputSchema}
+										>
+											<CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+												<div className="flex items-center gap-2">
+													<Code className="h-4 w-4 text-blue-600" />
+													<span className="font-medium">
+														{t("formDetail.inputSchema")}
+													</span>
+													<Badge className="text-xs bg-teal-500/20 text-teal-700 dark:text-teal-300 hover:bg-teal-500/30 border-teal-500/30">
+														{t("formDetail.preFillData")}
+													</Badge>
+												</div>
+												<ChevronDown
+													className={`h-4 w-4 transition-transform ${showInputSchema ? "rotate-180" : ""}`}
+												/>
+											</CollapsibleTrigger>
+											<CollapsibleContent className="mt-2">
+												<div className="p-4 rounded-lg bg-muted/50 border">
+													<p className="text-xs text-muted-foreground mb-2">
+														{t("formDetail.inputSchemaDesc")}
+													</p>
+													<pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
+														<code>
+															{JSON.stringify(
+																latestPublishedVersion.schema.input,
+																null,
+																2,
+															)}
+														</code>
+													</pre>
+												</div>
+											</CollapsibleContent>
+										</Collapsible>
 
-									{/* Output Schema */}
-									<Collapsible
-										open={showOutputSchema}
-										onOpenChange={setShowOutputSchema}
-									>
-										<CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-											<div className="flex items-center gap-2">
-												<Code className="h-4 w-4 text-emerald-600" />
-												<span className="font-medium">
-													{t("formDetail.outputSchema")}
-												</span>
-												<Badge className="text-xs bg-teal-500/20 text-teal-700 dark:text-teal-300 hover:bg-teal-500/30 border-teal-500/30">
-													{t("formDetail.responseData")}
-												</Badge>
-											</div>
-											<ChevronDown
-												className={`h-4 w-4 transition-transform ${showOutputSchema ? "rotate-180" : ""}`}
-											/>
-										</CollapsibleTrigger>
-										<CollapsibleContent className="mt-2">
-											<div className="p-4 rounded-lg bg-muted/50 border">
-												<p className="text-xs text-muted-foreground mb-2">
-													{t("formDetail.outputSchemaDesc")}
-												</p>
-												<pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
-													<code>
-														{JSON.stringify(
-															selectedVersion.schema.output,
-															null,
-															2,
-														)}
-													</code>
-												</pre>
-											</div>
-										</CollapsibleContent>
-									</Collapsible>
-								</div>
-							</Card>
+										{/* Output Schema */}
+										<Collapsible
+											open={showOutputSchema}
+											onOpenChange={setShowOutputSchema}
+										>
+											<CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+												<div className="flex items-center gap-2">
+													<Code className="h-4 w-4 text-emerald-600" />
+													<span className="font-medium">
+														{t("formDetail.outputSchema")}
+													</span>
+													<Badge className="text-xs bg-teal-500/20 text-teal-700 dark:text-teal-300 hover:bg-teal-500/30 border-teal-500/30">
+														{t("formDetail.responseData")}
+													</Badge>
+												</div>
+												<ChevronDown
+													className={`h-4 w-4 transition-transform ${showOutputSchema ? "rotate-180" : ""}`}
+												/>
+											</CollapsibleTrigger>
+											<CollapsibleContent className="mt-2">
+												<div className="p-4 rounded-lg bg-muted/50 border">
+													<p className="text-xs text-muted-foreground mb-2">
+														{t("formDetail.outputSchemaDesc")}
+													</p>
+													<pre className="text-xs bg-background p-3 rounded border overflow-x-auto">
+														<code>
+															{JSON.stringify(
+																latestPublishedVersion.schema.output,
+																null,
+																2,
+															)}
+														</code>
+													</pre>
+												</div>
+											</CollapsibleContent>
+										</Collapsible>
+									</div>
+								</Card>
+							)}
 
-							{/* Version History */}
+							{/* Published Version History */}
 							<Card className="p-6">
 								<div className="flex items-center justify-between mb-4">
 									<h2 className="text-lg font-semibold flex items-center gap-2">
 										<History className="h-5 w-5" />
 										{t("formDetail.versionHistory")}
 									</h2>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => setShowVersions(!showVersions)}
-									>
-										{showVersions
-											? t("formDetail.hideVersions")
-											: t("formDetail.showAllVersions")}
-									</Button>
+									{selectedForm.versions.length > 1 && (
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => setShowVersions(!showVersions)}
+										>
+											{showVersions
+												? t("formDetail.hideVersions")
+												: t("formDetail.showAllVersions")}
+										</Button>
+									)}
 								</div>
 
-								<div className="space-y-3">
-									{(showVersions
-										? selectedForm.versions
-										: selectedForm.versions.filter(
-												(v) => v.version === selectedForm.currentVersion,
-											)
-									)
-										.sort((a, b) => b.version - a.version)
-										.map((version) => (
-											<div
-												key={version.id}
-												className={`p-4 rounded-lg border ${
-													version.version === selectedVersion.version
-														? "bg-primary/5 border-primary"
-														: "bg-card hover:bg-accent/50"
-												} transition-colors cursor-pointer`}
-												onClick={() => setSelectedVersion(version.id)}
-											>
-												<div className="flex items-start justify-between mb-2">
-													<div className="flex items-center gap-2">
-														<Badge
-															variant={
-																version.version === selectedForm.currentVersion
-																	? "default"
-																	: "outline"
-															}
-															className="font-mono"
-														>
-															v{version.version}
-														</Badge>
-														{version.version ===
-															selectedForm.currentVersion && (
+								{selectedForm.versions.length === 0 ? (
+									<p className="text-sm text-muted-foreground py-4 text-center">
+										{t("formDetail.noVersionsYet")}
+									</p>
+								) : (
+									<div className="space-y-3">
+										{(showVersions
+											? selectedForm.versions
+											: [
+													selectedForm.versions.reduce((a, b) =>
+														a.version > b.version ? a : b,
+													),
+												]
+										)
+											.sort((a, b) => b.version - a.version)
+											.map((version) => (
+												<div
+													key={version.id}
+													className={`p-4 rounded-lg border ${
+														selectedVersion?.id === version.id
+															? "bg-primary/5 border-primary"
+															: "bg-card hover:bg-accent/50"
+													} transition-colors cursor-pointer`}
+													onClick={() => setSelectedVersion(version.id)}
+												>
+													<div className="flex items-start justify-between mb-2">
+														<div className="flex items-center gap-2">
 															<Badge
-																variant="outline"
-																className="bg-emerald-100 text-emerald-700 border-emerald-200"
+																variant={
+																	version.version ===
+																	selectedForm.currentVersion
+																		? "default"
+																		: "outline"
+																}
+																className="font-mono"
 															>
-																{t("common.current")}
+																v{version.version}
 															</Badge>
-														)}
+															{version.version ===
+																selectedForm.currentVersion && (
+																<Badge
+																	variant="outline"
+																	className="bg-emerald-100 text-emerald-700 border-emerald-200"
+																>
+																	{t("common.current")}
+																</Badge>
+															)}
+														</div>
+														<div className="text-xs text-muted-foreground flex items-center gap-1.5">
+															<Calendar className="h-3 w-3" />
+															{format(
+																new Date(version.createdAt),
+																"MMM d, yyyy",
+																{
+																	locale: dateLocale,
+																},
+															)}
+														</div>
 													</div>
-													<div className="text-xs text-muted-foreground flex items-center gap-1.5">
-														<Calendar className="h-3 w-3" />
-														{format(
-															new Date(version.createdAt),
-															"MMM d, yyyy",
-															{
-																locale: dateLocale,
-															},
-														)}
+													<p className="text-sm text-foreground mb-2">
+														{version.changelog}
+													</p>
+													<div className="flex items-center gap-4 text-xs text-muted-foreground">
+														<div className="flex items-center gap-1.5">
+															<User className="h-3 w-3" />
+															{version.createdBy}
+														</div>
+														<div>
+															{version.fields.length}{" "}
+															{version.fields.length !== 1
+																? t("formDetail.fields")
+																: t("formDetail.field")}
+														</div>
+														<div>
+															{formatDistanceToNow(
+																new Date(version.createdAt),
+																{
+																	addSuffix: true,
+																	locale: dateLocale,
+																},
+															)}
+														</div>
 													</div>
 												</div>
-												<p className="text-sm text-foreground mb-2">
-													{version.changelog}
-												</p>
-												<div className="flex items-center gap-4 text-xs text-muted-foreground">
-													<div className="flex items-center gap-1.5">
-														<User className="h-3 w-3" />
-														{version.createdBy}
-													</div>
-													<div>
-														{version.fields.length}{" "}
-														{version.fields.length !== 1
-															? t("formDetail.fields")
-															: t("formDetail.field")}
-													</div>
-													<div>
-														{formatDistanceToNow(new Date(version.createdAt), {
-															addSuffix: true,
-															locale: dateLocale,
-														})}
-													</div>
-												</div>
-											</div>
-										))}
-								</div>
+											))}
+									</div>
+								)}
 							</Card>
 
 							{/* Metadata */}
@@ -458,6 +570,60 @@ export function FormDetail({
 				open={showEditInfoDialog}
 				onOpenChange={setShowEditInfoDialog}
 			/>
+
+			{/* Publish Confirm Dialog */}
+			<Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>{t("formDetail.publishForm")}</DialogTitle>
+					</DialogHeader>
+					<div className="py-4">
+						<p className="text-sm text-muted-foreground">
+							{t("formDetail.publishConfirm")}
+						</p>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowPublishDialog(false)}
+						>
+							{t("common.cancel")}
+						</Button>
+						<Button onClick={handlePublish} disabled={isPublishing}>
+							{isPublishing ? t("common.loading") : t("formDetail.publish")}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Archive Confirm Dialog */}
+			<Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>{t("formDetail.archiveForm")}</DialogTitle>
+					</DialogHeader>
+					<div className="py-4">
+						<p className="text-sm text-muted-foreground">
+							{t("formDetail.archiveConfirm")}
+						</p>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowArchiveDialog(false)}
+						>
+							{t("common.cancel")}
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleArchive}
+							disabled={isArchiving}
+						>
+							{isArchiving ? t("common.loading") : t("formDetail.archive")}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

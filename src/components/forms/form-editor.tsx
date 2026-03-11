@@ -64,6 +64,8 @@ import {
 	ChevronRight,
 	Code,
 	Pencil,
+	Rocket,
+	RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -208,15 +210,16 @@ interface FormEditorProps {
 
 export function FormEditor({ onBack, onSave }: FormEditorProps) {
 	const router = useRouter();
-	const { selectedForm, saveFormVersion } = useFormStore();
+	const { selectedForm, saveFieldsDraft, publishForm } = useFormStore();
 	const { t } = useLanguage();
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [showAddField, setShowAddField] = useState(false);
-	const [showSaveDialog, setShowSaveDialog] = useState(false);
+	const [showPublishDialog, setShowPublishDialog] = useState(false);
 	const [showLivePreview, setShowLivePreview] = useState(false);
+	const [isSavingDraft, setIsSavingDraft] = useState(false);
+	const [isPublishing, setIsPublishing] = useState(false);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [previewData, setPreviewData] = useState<Record<string, any>>({});
-	const [changelog, setChangelog] = useState("");
 
 	// New field form state
 	const [newFieldType, setNewFieldType] = useState<FormFieldType>("name");
@@ -264,12 +267,8 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 
 	useEffect(() => {
 		if (selectedForm) {
-			const currentVersion = selectedForm.versions.find(
-				(v) => v.version === selectedForm.currentVersion,
-			);
-			if (currentVersion) {
-				setFields(JSON.parse(JSON.stringify(currentVersion.fields)));
-			}
+			// Initialize from draft fields, not a published version
+			setFields(JSON.parse(JSON.stringify(selectedForm.draftFields)));
 		}
 	}, [selectedForm]);
 
@@ -443,32 +442,45 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		setFields(fields.filter((f) => f.id !== fieldId));
 	};
 
-	const handleSaveVersion = async () => {
-		if (!changelog.trim()) return;
-
-		// Checksum: skip if fields are identical to current version
-		const currentVersion = selectedForm.versions.find(
-			(v) => v.version === selectedForm.currentVersion,
-		);
-		if (currentVersion) {
+	const handleSaveDraft = async () => {
+		if (!selectedForm) return;
+		setIsSavingDraft(true);
+		try {
+			// Checksum: skip if fields identical to current draft
 			const [currentChecksum, newChecksum] = await Promise.all([
-				computeFieldsChecksum(currentVersion.fields),
+				computeFieldsChecksum(selectedForm.draftFields),
 				computeFieldsChecksum(fields),
 			]);
 			if (currentChecksum === newChecksum) {
 				toast.info(t("formEditor.noChanges"), {
 					description: t("formEditor.noChangesDesc"),
 				});
-				setShowSaveDialog(false);
-				setChangelog("");
 				return;
 			}
+			await saveFieldsDraft(selectedForm.id, fields);
+			toast.success(t("formEditor.draftSaved"));
+		} catch {
+			toast.error(t("formEditor.saveDraftError"));
+		} finally {
+			setIsSavingDraft(false);
 		}
+	};
 
-		saveFormVersion(selectedForm.id, fields, changelog);
-		setShowSaveDialog(false);
-		setChangelog("");
-		onSave();
+	const handlePublish = async () => {
+		if (!selectedForm) return;
+		setIsPublishing(true);
+		try {
+			// Save current fields as draft first, then publish
+			await saveFieldsDraft(selectedForm.id, fields);
+			await publishForm(selectedForm.id);
+			toast.success(t("formEditor.published"));
+			setShowPublishDialog(false);
+			onSave();
+		} catch {
+			toast.error(t("formEditor.publishError"));
+		} finally {
+			setIsPublishing(false);
+		}
 	};
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -849,13 +861,42 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 							</span>
 						</Button>
 						<Button
-							onClick={() => setShowSaveDialog(true)}
+							variant="outline"
+							onClick={handleSaveDraft}
+							disabled={isSavingDraft}
 							className="gap-2 flex-1 sm:flex-none"
 							size="sm"
 						>
 							<Save className="h-4 w-4" />
 							<span className="hidden md:inline">
-								{t("formEditor.saveVersion")}
+								{t("formEditor.saveDraft")}
+							</span>
+						</Button>
+						<Button
+							onClick={() => setShowPublishDialog(true)}
+							className="gap-2 flex-1 sm:flex-none"
+							size="sm"
+							disabled={fields.length === 0}
+							title={
+								fields.length === 0
+									? t("formEditor.noFieldsToPublish")
+									: selectedForm.status === "published"
+										? t("formEditor.updateForm")
+										: t("formEditor.publishForm")
+							}
+							variant={
+								selectedForm.status === "published" ? "outline" : "default"
+							}
+						>
+							{selectedForm.status === "published" ? (
+								<RefreshCw className="h-4 w-4" />
+							) : (
+								<Rocket className="h-4 w-4" />
+							)}
+							<span className="hidden md:inline">
+								{selectedForm.status === "published"
+									? t("formEditor.update")
+									: t("formEditor.publish")}
 							</span>
 						</Button>
 						<SessionControls />
@@ -1124,36 +1165,26 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 				</DialogContent>
 			</Dialog>
 
-			{/* Save Version Dialog */}
-			<Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+			{/* Publish Confirm Dialog */}
+			<Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>{t("formEditor.saveNewVersion")}</DialogTitle>
+						<DialogTitle>{t("formEditor.publishForm")}</DialogTitle>
 					</DialogHeader>
-					<div className="space-y-4 py-4">
-						<div>
-							<Label>{t("formEditor.changelog")}</Label>
-							<Textarea
-								value={changelog}
-								onChange={(e) => setChangelog(e.target.value)}
-								placeholder={t("formEditor.changelogPlaceholder")}
-								className="mt-1"
-								rows={4}
-							/>
-						</div>
+					<div className="py-4">
+						<p className="text-sm text-muted-foreground">
+							{t("formEditor.publishConfirm")}
+						</p>
 					</div>
 					<DialogFooter>
 						<Button
 							variant="outline"
-							onClick={() => {
-								setShowSaveDialog(false);
-								setChangelog("");
-							}}
+							onClick={() => setShowPublishDialog(false)}
 						>
 							{t("common.cancel")}
 						</Button>
-						<Button onClick={handleSaveVersion} disabled={!changelog.trim()}>
-							{t("formEditor.saveVersion")}
+						<Button onClick={handlePublish} disabled={isPublishing}>
+							{isPublishing ? t("common.loading") : t("formEditor.publish")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

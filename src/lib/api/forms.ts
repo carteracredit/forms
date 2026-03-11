@@ -35,6 +35,8 @@ export interface ApiForm {
 	status: "draft" | "published" | "archived";
 	current_version: number;
 	tags: string[];
+	/** Current working draft fields (not yet published). */
+	draft_fields: FormField[];
 	created_at: string;
 	updated_at: string;
 	versions: ApiFormVersion[];
@@ -73,10 +75,8 @@ export interface UpdateFormPayload {
 	tags?: string[];
 }
 
-export interface CreateFormVersionPayload {
+export interface SaveFieldsDraftPayload {
 	fields: FormField[];
-	schema: { input: Record<string, unknown>; output: Record<string, unknown> };
-	changelog?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +117,7 @@ export function apiFormToForm(apiForm: ApiForm): Form {
 		descriptionEs: apiForm.description_es ?? undefined,
 		status: apiForm.status,
 		currentVersion: apiForm.current_version,
+		draftFields: apiForm.draft_fields ?? [],
 		versions: apiForm.versions.map(apiVersionToFormVersion),
 		createdAt: apiForm.created_at,
 		updatedAt: apiForm.updated_at,
@@ -133,6 +134,7 @@ export function apiFormSummaryToForm(s: ApiFormSummary): Form {
 		descriptionEs: s.description_es ?? undefined,
 		status: s.status,
 		currentVersion: s.current_version,
+		draftFields: [],
 		versions: [],
 		createdAt: s.created_at,
 		updatedAt: s.updated_at,
@@ -272,7 +274,7 @@ export async function archiveForm(
 
 /**
  * GET /forms/:id/versions
- * Returns all versions of a form ordered ascending.
+ * Returns all published versions of a form ordered ascending.
  */
 export async function listFormVersions(
 	formId: string,
@@ -287,23 +289,24 @@ export async function listFormVersions(
 }
 
 /**
- * POST /forms/:id/versions
- * Creates a new version of a form with the provided fields and schema.
+ * PUT /forms/:id (with fields)
+ * Saves the working draft fields without creating a version.
+ * No new form_version row is created — call publishForm() to create one.
  */
-export async function createFormVersion(
+export async function saveFieldsDraft(
 	formId: string,
-	payload: CreateFormVersionPayload,
+	payload: SaveFieldsDraftPayload,
 	options?: FormsApiOptions,
-): Promise<FormVersion> {
+): Promise<Form> {
 	const baseUrl = getWorkflowServiceUrl();
-	const { json } = await fetchJson<ApiResponse<ApiFormVersion>>(
-		`${baseUrl}/forms/${formId}/versions`,
+	const { json } = await fetchJson<ApiResponse<ApiForm>>(
+		`${baseUrl}/forms/${formId}`,
 		{
-			method: "POST",
+			method: "PUT",
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify(payload),
 			jwt: options?.jwt,
 		},
 	);
-	return apiVersionToFormVersion(json.result);
+	return apiFormToForm(json.result);
 }

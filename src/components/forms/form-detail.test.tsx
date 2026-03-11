@@ -34,6 +34,7 @@ const mockForm = {
 	description: "A test form description",
 	status: "published",
 	currentVersion: 1,
+	draftFields: [{ id: "f1", type: "text", label: "Name", required: true }],
 	createdAt: "2024-01-01T00:00:00Z",
 	updatedAt: "2024-01-15T00:00:00Z",
 	tags: ["test"],
@@ -55,6 +56,8 @@ vi.mock("@/lib/form-store", () => ({
 		selectedForm: mockForm,
 		selectedVersion: mockForm.versions[0],
 		setSelectedVersion: vi.fn(),
+		publishForm: vi.fn(),
+		archiveForm: vi.fn(),
 	}),
 }));
 
