@@ -54,12 +54,19 @@ vi.mock("@/lib/auth/actions", () => ({
 	logout: vi.fn().mockResolvedValue(undefined),
 }));
 
-// Mock @algenium/blocks
-vi.mock("@algenium/blocks", () => ({
-	LanguageSwitcher: () => (
-		<button data-testid="language-switcher">Language</button>
+// Mock SessionControls
+vi.mock("@/components/SessionControls", () => ({
+	SessionControls: () => (
+		<div data-testid="session-controls">
+			<button data-testid="language-switcher">Language</button>
+			<button data-testid="theme-switcher">Theme</button>
+		</div>
 	),
-	ThemeSwitcher: () => <button data-testid="theme-switcher">Theme</button>,
+}));
+
+// Mock next/image
+vi.mock("next/image", () => ({
+	default: (props: { alt: string }) => <img {...props} />,
 }));
 
 // Mock form components
@@ -153,9 +160,17 @@ vi.mock("@/lib/form-store", () => ({
 	useFormStore: Object.assign(
 		() => ({
 			setSelectedForm: vi.fn(),
-			createForm: vi.fn(),
+			createForm: vi.fn().mockResolvedValue({
+				id: "new-form",
+				name: "New Form",
+				versions: [{ id: "v1", version: 1, fields: [] }],
+				currentVersion: 1,
+			}),
 			startEditing: vi.fn(),
 			cancelEditing: vi.fn(),
+			fetchForms: vi.fn().mockResolvedValue(undefined),
+			isLoading: false,
+			error: null,
 		}),
 		{
 			getState: () => ({

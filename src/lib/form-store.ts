@@ -2,7 +2,17 @@
 
 import { create } from "zustand";
 import type { Form, FormField, FormVersion } from "./types/form";
-import { mockForms } from "./mock-data";
+import {
+	listFormsAction,
+	getFormAction,
+	createFormAction,
+	updateFormAction,
+	deleteFormAction,
+	publishFormAction,
+	archiveFormAction,
+	createFormVersionAction,
+} from "./api/forms-actions";
+import type { ListFormsOptions } from "./api/forms";
 
 /**
  * Form store state and actions interface
@@ -19,6 +29,17 @@ interface FormStore {
 	/** Fields being edited (working copy) */
 	editingFields: FormField[];
 
+	/** Loading state for async operations */
+	isLoading: boolean;
+	/** Error state for async operations */
+	error: string | null;
+
+	// Data fetching
+	/** Fetch all forms from the API */
+	fetchForms: (options?: ListFormsOptions) => Promise<void>;
+	/** Refresh a single form by ID from the API */
+	refreshForm: (formId: string) => Promise<void>;
+
 	// Selection actions
 	/** Select a form by ID */
 	setSelectedForm: (formId: string | null) => void;
@@ -27,11 +48,25 @@ interface FormStore {
 
 	// Form CRUD actions
 	/** Create a new form */
-	createForm: (name: string, description: string) => void;
+	createForm: (
+		name: string,
+		description: string,
+		options?: { jwt?: string },
+	) => Promise<Form>;
 	/** Update an existing form's metadata */
-	updateForm: (formId: string, updates: Partial<Form>) => void;
+	updateForm: (
+		formId: string,
+		updates: Partial<
+			Pick<Form, "name" | "nameEs" | "description" | "descriptionEs" | "tags">
+		>,
+		options?: { jwt?: string },
+	) => Promise<void>;
 	/** Delete a form */
-	deleteForm: (formId: string) => void;
+	deleteForm: (formId: string, options?: { jwt?: string }) => Promise<void>;
+	/** Publish a form */
+	publishForm: (formId: string, options?: { jwt?: string }) => Promise<void>;
+	/** Archive a form */
+	archiveForm: (formId: string, options?: { jwt?: string }) => Promise<void>;
 
 	// Editing actions
 	/** Start editing a form */
@@ -43,7 +78,8 @@ interface FormStore {
 		formId: string,
 		fields: FormField[],
 		changelog: string,
-	) => void;
+		options?: { jwt?: string },
+	) => Promise<void>;
 	/** Update the editing fields state */
 	updateEditingFields: (fields: FormField[]) => void;
 
@@ -59,20 +95,61 @@ interface FormStore {
 }
 
 /**
+ * Builds the output schema from a list of fields.
+ * Keys are field IDs, values are type strings.
+ */
+function buildOutputSchema(fields: FormField[]): Record<string, unknown> {
+	return fields.reduce(
+		(acc, field) => {
+			acc[field.id] = field.type === "checkbox-group" ? "array" : "string";
+			return acc;
+		},
+		{} as Record<string, unknown>,
+	);
+}
+
+/**
  * Zustand store for form management.
  *
- * This store handles:
- * - Form CRUD operations
- * - Form versioning
- * - Field editing and manipulation
- * - Selection state
+ * All CRUD operations are async and backed by the workflow-svc API.
+ * Local state is kept in sync after each successful API call.
  */
 export const useFormStore = create<FormStore>((set, get) => ({
-	forms: mockForms,
+	forms: [],
 	selectedForm: null,
 	selectedVersion: null,
 	isEditing: false,
 	editingFields: [],
+	isLoading: false,
+	error: null,
+
+	fetchForms: async (options) => {
+		set({ isLoading: true, error: null });
+		try {
+			const forms = await listFormsAction(options);
+			set({ forms, isLoading: false });
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to fetch forms";
+			set({ isLoading: false, error: message });
+		}
+	},
+
+	refreshForm: async (formId) => {
+		try {
+			const form = await getFormAction(formId);
+			const current = get();
+			set({
+				forms: current.forms.map((f) => (f.id === formId ? form : f)),
+				selectedForm:
+					current.selectedForm?.id === formId ? form : current.selectedForm,
+			});
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to refresh form";
+			set({ error: message });
+		}
+	},
 
 	setSelectedForm: (formId) => {
 		if (!formId) {
@@ -84,7 +161,7 @@ export const useFormStore = create<FormStore>((set, get) => ({
 			const currentVersion = form.versions.find(
 				(v) => v.version === form.currentVersion,
 			);
-			set({ selectedForm: form, selectedVersion: currentVersion });
+			set({ selectedForm: form, selectedVersion: currentVersion ?? null });
 		}
 	},
 
@@ -98,47 +175,100 @@ export const useFormStore = create<FormStore>((set, get) => ({
 		}
 	},
 
-	createForm: (name, description) => {
-		const newForm: Form = {
-			id: Date.now().toString(),
-			name,
-			description,
-			status: "draft",
-			currentVersion: 1,
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-			tags: [],
-			versions: [
-				{
-					id: `v${Date.now()}-1`,
-					version: 1,
-					createdAt: new Date().toISOString(),
-					createdBy: "Current User",
-					changelog: "Initial form creation",
-					fields: [],
-					schema: { input: {}, output: {} },
-				},
-			],
-		};
-		set({ forms: [newForm, ...get().forms] });
+	createForm: async (name, description, options) => {
+		set({ isLoading: true, error: null });
+		try {
+			const newForm = await createFormAction({ name, description });
+			set({ forms: [newForm, ...get().forms], isLoading: false });
+			return newForm;
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to create form";
+			set({ isLoading: false, error: message });
+			throw err;
+		}
 	},
 
-	updateForm: (formId, updates) => {
-		set({
-			forms: get().forms.map((f) =>
-				f.id === formId
-					? { ...f, ...updates, updatedAt: new Date().toISOString() }
-					: f,
-			),
-		});
+	updateForm: async (formId, updates, options) => {
+		try {
+			const updatedForm = await updateFormAction(formId, {
+				name: updates.name,
+				name_es: updates.nameEs,
+				description: updates.description,
+				description_es: updates.descriptionEs,
+				tags: updates.tags,
+			});
+			const current = get();
+			set({
+				forms: current.forms.map((f) => (f.id === formId ? updatedForm : f)),
+				selectedForm:
+					current.selectedForm?.id === formId
+						? updatedForm
+						: current.selectedForm,
+			});
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to update form";
+			set({ error: message });
+			throw err;
+		}
 	},
 
-	deleteForm: (formId) => {
-		set({
-			forms: get().forms.filter((f) => f.id !== formId),
-			selectedForm: null,
-			selectedVersion: null,
-		});
+	deleteForm: async (formId, options) => {
+		try {
+			await deleteFormAction(formId);
+			const current = get();
+			set({
+				forms: current.forms.filter((f) => f.id !== formId),
+				selectedForm:
+					current.selectedForm?.id === formId ? null : current.selectedForm,
+				selectedVersion:
+					current.selectedForm?.id === formId ? null : current.selectedVersion,
+			});
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to delete form";
+			set({ error: message });
+			throw err;
+		}
+	},
+
+	publishForm: async (formId, options) => {
+		try {
+			const updatedForm = await publishFormAction(formId);
+			const current = get();
+			set({
+				forms: current.forms.map((f) => (f.id === formId ? updatedForm : f)),
+				selectedForm:
+					current.selectedForm?.id === formId
+						? updatedForm
+						: current.selectedForm,
+			});
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to publish form";
+			set({ error: message });
+			throw err;
+		}
+	},
+
+	archiveForm: async (formId, options) => {
+		try {
+			const updatedForm = await archiveFormAction(formId);
+			const current = get();
+			set({
+				forms: current.forms.map((f) => (f.id === formId ? updatedForm : f)),
+				selectedForm:
+					current.selectedForm?.id === formId
+						? updatedForm
+						: current.selectedForm,
+			});
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to archive form";
+			set({ error: message });
+			throw err;
+		}
 	},
 
 	startEditing: (form, version) => {
@@ -158,45 +288,42 @@ export const useFormStore = create<FormStore>((set, get) => ({
 		set({ isEditing: false, editingFields: [] });
 	},
 
-	saveFormVersion: (formId, fields, changelog) => {
-		const form = get().forms.find((f) => f.id === formId);
-		if (!form) return;
-
-		const newVersion: FormVersion = {
-			id: `v${Date.now()}-${form.currentVersion + 1}`,
-			version: form.currentVersion + 1,
-			createdAt: new Date().toISOString(),
-			createdBy: "Current User",
-			changelog: changelog || `Version ${form.currentVersion + 1}`,
-			fields: JSON.parse(JSON.stringify(fields)),
-			schema: {
-				input: {},
-				output: fields.reduce(
-					(acc, field) => {
-						acc[field.id] =
-							field.type === "checkbox-group" ? "array" : "string";
-						return acc;
-					},
-					{} as Record<string, string>,
-				),
-			},
+	saveFormVersion: async (formId, fields, changelog, options) => {
+		const schema = {
+			input: {} as Record<string, unknown>,
+			output: buildOutputSchema(fields),
 		};
 
-		set({
-			forms: get().forms.map((f) =>
-				f.id === formId
-					? {
-							...f,
-							currentVersion: newVersion.version,
-							versions: [...f.versions, newVersion],
-							updatedAt: new Date().toISOString(),
-						}
-					: f,
-			),
-			isEditing: false,
-			editingFields: [],
-			selectedVersion: newVersion,
-		});
+		try {
+			const newVersion = await createFormVersionAction(formId, {
+				fields,
+				schema,
+				changelog,
+			});
+
+			// Refresh the full form to get the updated current_version
+			const updatedForm = await getFormAction(formId);
+			const currentVersion = updatedForm.versions.find(
+				(v) => v.id === newVersion.id,
+			);
+
+			const current = get();
+			set({
+				forms: current.forms.map((f) => (f.id === formId ? updatedForm : f)),
+				selectedForm:
+					current.selectedForm?.id === formId
+						? updatedForm
+						: current.selectedForm,
+				selectedVersion: currentVersion ?? newVersion,
+				isEditing: false,
+				editingFields: [],
+			});
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to save form version";
+			set({ error: message });
+			throw err;
+		}
 	},
 
 	updateEditingFields: (fields) => {

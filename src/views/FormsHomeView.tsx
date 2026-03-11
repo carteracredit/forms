@@ -1,44 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
-import { useAuthSession } from "@/lib/auth/useAuthSession";
 import { FormsList } from "@/components/forms/forms-list";
 import { FormDetail } from "@/components/forms/form-detail";
 import { FormEditor } from "@/components/forms/form-editor";
 import { CreateFormDialog } from "@/components/forms/create-form-dialog";
+import { SessionControls } from "@/components/SessionControls";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { LanguageSwitcher, ThemeSwitcher } from "@algenium/blocks";
-import { Plus, User, LogOut } from "lucide-react";
-import { getAuthAppUrl } from "@/lib/auth/config";
-import { logout } from "@/lib/auth/actions";
+import { Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 type ViewState = "list" | "detail" | "editor";
 
-const languages = [
-	{ key: "en", label: "EN", nativeName: "English" },
-	{ key: "es", label: "ES", nativeName: "Español" },
-];
-
 export function FormsHomeView() {
-	const router = useRouter();
-	const { data: session } = useAuthSession();
-	const { setSelectedForm, createForm, startEditing, cancelEditing } =
-		useFormStore();
-	const { t, language, setLanguage } = useLanguage();
+	const {
+		setSelectedForm,
+		createForm,
+		startEditing,
+		cancelEditing,
+		fetchForms,
+		isLoading,
+		error,
+	} = useFormStore();
+	const { t } = useLanguage();
 	const [view, setView] = useState<ViewState>("list");
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+	// Load forms on mount
+	useEffect(() => {
+		fetchForms();
+	}, [fetchForms]);
+
+	// Show error toast when store reports an error
+	useEffect(() => {
+		if (error) {
+			toast.error(error);
+		}
+	}, [error]);
 
 	const handleViewForm = (formId: string) => {
 		setSelectedForm(formId);
@@ -62,23 +63,19 @@ export function FormsHomeView() {
 		setView("list");
 	};
 
-	const handleCreateForm = (name: string, description: string) => {
-		createForm(name, description);
-		const forms = useFormStore.getState().forms;
-		const newForm = forms[0]; // New form is added at the beginning
-		if (newForm) {
+	const handleCreateForm = async (name: string, description: string) => {
+		try {
+			const newForm = await createForm(name, description);
 			setSelectedForm(newForm.id);
 			startEditing(newForm);
 			setView("editor");
+		} catch {
+			// Error is already set in store and toasted via useEffect
 		}
 	};
 
 	const handleSave = () => {
 		setView("detail");
-	};
-
-	const handleLogout = async () => {
-		await logout();
 	};
 
 	return (
@@ -100,96 +97,19 @@ export function FormsHomeView() {
 								onClick={() => setShowCreateDialog(true)}
 								size="sm"
 								className="gap-2"
+								disabled={isLoading}
 							>
-								<Plus className="h-4 w-4" />
+								{isLoading ? (
+									<Loader2 className="h-4 w-4 animate-spin" />
+								) : (
+									<Plus className="h-4 w-4" />
+								)}
 								{t("formsList.createForm")}
 							</Button>
 						)}
 					</div>
 
-					<div className="flex items-center gap-3">
-						<LanguageSwitcher
-							languages={languages}
-							currentLanguage={language}
-							onLanguageChange={(key) => setLanguage(key as "en" | "es")}
-							labels={{ language: t("languageToggle") }}
-							showIcon
-						/>
-						<ThemeSwitcher
-							labels={{
-								theme: t("themeToggle"),
-								light: t("themeLight"),
-								dark: t("themeDark"),
-								system: t("themeSystem"),
-							}}
-						/>
-
-						{session && (
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										className="relative h-10 w-10 rounded-full"
-									>
-										<Avatar className="h-10 w-10">
-											<AvatarImage
-												src={session.user.image || undefined}
-												alt={session.user.name}
-											/>
-											<AvatarFallback>
-												{session.user.name
-													?.split(" ")
-													.map((n) => n[0])
-													.join("")
-													.toUpperCase() || "U"}
-											</AvatarFallback>
-										</Avatar>
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent className="w-56" align="end">
-									<div className="flex items-center gap-2 p-2">
-										<Avatar className="h-8 w-8">
-											<AvatarImage
-												src={session.user.image || undefined}
-												alt={session.user.name}
-											/>
-											<AvatarFallback>
-												{session.user.name
-													?.split(" ")
-													.map((n) => n[0])
-													.join("")
-													.toUpperCase() || "U"}
-											</AvatarFallback>
-										</Avatar>
-										<div className="flex flex-col space-y-0.5">
-											<p className="text-sm font-medium">{session.user.name}</p>
-											<p className="text-xs text-muted-foreground">
-												{session.user.email}
-											</p>
-										</div>
-									</div>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem asChild>
-										<a
-											href={`${getAuthAppUrl()}/settings`}
-											className="flex items-center gap-2 cursor-pointer"
-										>
-											<User className="h-4 w-4" />
-											{t("userAccount")}
-										</a>
-									</DropdownMenuItem>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										onClick={handleLogout}
-										className="flex items-center gap-2 cursor-pointer text-destructive"
-									>
-										<LogOut className="h-4 w-4" />
-										{t("userLogout")}
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						)}
-					</div>
+					<SessionControls />
 				</div>
 			</header>
 
