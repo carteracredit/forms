@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ export function EditFormInfoDialog({
 	open,
 	onOpenChange,
 }: EditFormInfoDialogProps) {
-	const { selectedForm, updateForm } = useFormStore();
+	const { forms, selectedForm, updateForm } = useFormStore();
 	const { t } = useLanguage();
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -44,6 +44,15 @@ export function EditFormInfoDialog({
 		}
 	}, [open, selectedForm]);
 
+	const isDuplicateName = useMemo(() => {
+		if (!selectedForm) return false;
+		const trimmed = name.trim().toLowerCase();
+		if (!trimmed) return false;
+		return forms.some(
+			(f) => f.id !== selectedForm.id && f.name.toLowerCase() === trimmed,
+		);
+	}, [name, forms, selectedForm]);
+
 	if (!selectedForm) return null;
 
 	const hasChanges =
@@ -52,7 +61,7 @@ export function EditFormInfoDialog({
 		tags.trim() !== selectedForm.tags.join(", ");
 
 	const handleSave = async () => {
-		if (!name.trim()) return;
+		if (!name.trim() || isDuplicateName) return;
 		setIsSaving(true);
 		try {
 			await updateForm(selectedForm.id, {
@@ -88,8 +97,13 @@ export function EditFormInfoDialog({
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder={t("createForm.formNamePlaceholder")}
-							className="mt-1"
+							className={`mt-1 ${isDuplicateName ? "border-destructive" : ""}`}
 						/>
+						{isDuplicateName && (
+							<p className="text-sm text-destructive mt-1">
+								{t("createForm.duplicateName")}
+							</p>
+						)}
 					</div>
 
 					<div>
@@ -131,7 +145,9 @@ export function EditFormInfoDialog({
 					</Button>
 					<Button
 						onClick={handleSave}
-						disabled={!name.trim() || !hasChanges || isSaving}
+						disabled={
+							!name.trim() || !hasChanges || isDuplicateName || isSaving
+						}
 					>
 						{isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 						{t("common.save")}

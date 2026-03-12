@@ -391,8 +391,20 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		return base;
 	};
 
+	const isFieldLabelDuplicate = (label: string, excludeFieldId?: string) => {
+		const trimmed = label.trim().toLowerCase();
+		if (!trimmed) return false;
+		return fields.some(
+			(f) => f.id !== excludeFieldId && f.label.toLowerCase() === trimmed,
+		);
+	};
+
 	const handleAddField = () => {
 		if (!newFieldLabel.trim()) return;
+		if (isFieldLabelDuplicate(newFieldLabel)) {
+			toast.error(t("formEditor.duplicateFieldLabel"));
+			return;
+		}
 
 		const newField = buildFieldFromForm(`f${Date.now()}`);
 		setFields([...fields, newField]);
@@ -430,6 +442,10 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 
 	const handleUpdateField = () => {
 		if (!newFieldLabel.trim() || !editingField) return;
+		if (isFieldLabelDuplicate(newFieldLabel, editingField.id)) {
+			toast.error(t("formEditor.duplicateFieldLabel"));
+			return;
+		}
 
 		const updatedField = buildFieldFromForm(editingField.id, editingField);
 		setFields(fields.map((f) => (f.id === editingField.id ? updatedField : f)));
@@ -526,6 +542,14 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						value={newFieldLabel}
 						onChange={(e) => setNewFieldLabel(e.target.value)}
 						placeholder={t("formEditor.enterLabelEn")}
+						className={
+							isFieldLabelDuplicate(
+								newFieldLabel,
+								isEdit ? editingField?.id : undefined,
+							)
+								? "border-destructive"
+								: ""
+						}
 					/>
 					<Input
 						value={newFieldLabelEs}
@@ -533,6 +557,14 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						placeholder={t("formEditor.enterLabelEs")}
 					/>
 				</div>
+				{isFieldLabelDuplicate(
+					newFieldLabel,
+					isEdit ? editingField?.id : undefined,
+				) && (
+					<p className="text-sm text-destructive mt-1">
+						{t("formEditor.duplicateFieldLabel")}
+					</p>
+				)}
 			</div>
 
 			<div>
@@ -1130,7 +1162,12 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						>
 							{t("common.cancel")}
 						</Button>
-						<Button onClick={handleAddField} disabled={!newFieldLabel.trim()}>
+						<Button
+							onClick={handleAddField}
+							disabled={
+								!newFieldLabel.trim() || isFieldLabelDuplicate(newFieldLabel)
+							}
+						>
 							{t("formEditor.addField")}
 						</Button>
 					</DialogFooter>
@@ -1157,7 +1194,10 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						</Button>
 						<Button
 							onClick={handleUpdateField}
-							disabled={!newFieldLabel.trim()}
+							disabled={
+								!newFieldLabel.trim() ||
+								isFieldLabelDuplicate(newFieldLabel, editingField?.id)
+							}
 						>
 							{t("common.save")}
 						</Button>
