@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -17,6 +17,7 @@ type ViewState = "list" | "detail" | "editor";
 
 export function FormsHomeView() {
 	const {
+		forms,
 		setSelectedForm,
 		createForm,
 		startEditing,
@@ -90,6 +91,8 @@ export function FormsHomeView() {
 			// Error is already set in store and toasted via useEffect
 		}
 	};
+
+	const existingFormNames = useMemo(() => forms.map((f) => f.name), [forms]);
 
 	const handleSave = () => {
 		setView("detail");
@@ -172,6 +175,7 @@ export function FormsHomeView() {
 				open={showCreateDialog}
 				onOpenChange={setShowCreateDialog}
 				onCreateForm={handleCreateForm}
+				existingFormNames={existingFormNames}
 			/>
 		</div>
 	);

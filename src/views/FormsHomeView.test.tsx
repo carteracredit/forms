@@ -159,6 +159,14 @@ vi.mock("@/components/forms/create-form-dialog", () => ({
 vi.mock("@/lib/form-store", () => ({
 	useFormStore: Object.assign(
 		() => ({
+			forms: [
+				{
+					id: "form-1",
+					name: "Test Form",
+					versions: [{ id: "v1", version: 1, fields: [] }],
+					currentVersion: 1,
+				},
+			],
 			setSelectedForm: vi.fn(),
 			createForm: vi.fn().mockResolvedValue({
 				id: "new-form",

@@ -210,6 +210,7 @@ export const translations = {
 			changelogPlaceholder: "Describe what changed in this version...",
 			noFormSelected: "No form selected",
 			livePreview: "Live Preview",
+			duplicateFieldLabel: "A field with this label already exists in the form",
 		},
 
 		// Field Types
@@ -419,6 +420,7 @@ export const translations = {
 			formNamePlaceholder: "e.g. Customer Feedback Form",
 			descriptionLabel: "Description",
 			descriptionPlaceholder: "Describe the purpose of this form...",
+			duplicateName: "A form with this name already exists",
 		},
 
 		// Edit Form Info Dialog
@@ -751,6 +753,8 @@ export const translations = {
 			changelogPlaceholder: "Describe qué cambió en esta versión...",
 			noFormSelected: "Ningún formulario seleccionado",
 			livePreview: "Vista Previa en Vivo",
+			duplicateFieldLabel:
+				"Ya existe un campo con esta etiqueta en el formulario",
 		},
 
 		// Field Types
@@ -969,6 +973,7 @@ export const translations = {
 			formNamePlaceholder: "ej. Formulario de Comentarios del Cliente",
 			descriptionLabel: "Descripción",
 			descriptionPlaceholder: "Describe el propósito de este formulario...",
+			duplicateName: "Ya existe un formulario con este nombre",
 		},
 
 		// Edit Form Info Dialog

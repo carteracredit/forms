@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,19 +19,27 @@ interface CreateFormDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onCreateForm: (name: string, description: string) => void;
+	existingFormNames?: string[];
 }
 
 export function CreateFormDialog({
 	open,
 	onOpenChange,
 	onCreateForm,
+	existingFormNames = [],
 }: CreateFormDialogProps) {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const { t } = useLanguage();
 
+	const isDuplicate = useMemo(() => {
+		const trimmed = name.trim().toLowerCase();
+		if (!trimmed) return false;
+		return existingFormNames.some((n) => n.toLowerCase() === trimmed);
+	}, [name, existingFormNames]);
+
 	const handleCreate = () => {
-		if (!name.trim()) return;
+		if (!name.trim() || isDuplicate) return;
 		onCreateForm(name, description);
 		setName("");
 		setDescription("");
@@ -54,8 +62,13 @@ export function CreateFormDialog({
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder={t("createForm.formNamePlaceholder")}
-							className="mt-1"
+							className={`mt-1 ${isDuplicate ? "border-destructive" : ""}`}
 						/>
+						{isDuplicate && (
+							<p className="text-sm text-destructive mt-1">
+								{t("createForm.duplicateName")}
+							</p>
+						)}
 					</div>
 
 					<div>
@@ -77,7 +90,7 @@ export function CreateFormDialog({
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
 						{t("common.cancel")}
 					</Button>
-					<Button onClick={handleCreate} disabled={!name.trim()}>
+					<Button onClick={handleCreate} disabled={!name.trim() || isDuplicate}>
 						{t("createForm.title")}
 					</Button>
 				</DialogFooter>

@@ -35,6 +35,7 @@ const mockForm = {
 
 vi.mock("@/lib/form-store", () => ({
 	useFormStore: () => ({
+		forms: [mockForm],
 		selectedForm: mockForm,
 		updateForm: mockUpdateForm,
 	}),
