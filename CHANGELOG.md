@@ -1,3 +1,10 @@
+# [1.0.0-rc.9](https://github.com/carteracredit/forms/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2026-03-12)
+
+
+### Features
+
+* enhance form creation and editing with duplicate name validation ([8d97969](https://github.com/carteracredit/forms/commit/8d97969ad8907a87b2cafae95cee539e4d83aee3))
+
 # [1.0.0-rc.8](https://github.com/carteracredit/forms/compare/v1.0.0-rc.7...v1.0.0-rc.8) (2026-03-11)
 
 
