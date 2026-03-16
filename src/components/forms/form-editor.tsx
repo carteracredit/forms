@@ -146,7 +146,17 @@ function getFieldSchemaPreview(field: FormField): {
 			break;
 		case "address":
 			input.street = "string";
+			input.street2 = "string (optional)";
 			input.city = "string";
+			input.state = "string";
+			input.zip = "string";
+			input.country = "string";
+			output.street = "string";
+			output.street2 = "string (optional)";
+			output.city = "string";
+			output.state = "string";
+			output.zip = "string";
+			output.country = "string";
 			output.fullAddress = "string";
 			break;
 		case "file":
