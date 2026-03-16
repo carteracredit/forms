@@ -104,7 +104,11 @@ function getFieldSchemaPreview(field: FormField): {
 	switch (field.type) {
 		case "name":
 			input.firstName = "John";
+			if (field.properties?.includeMiddleName) input.middleName = "M.";
 			input.lastName = "Doe";
+			output.firstName = "string";
+			if (field.properties?.includeMiddleName) output.middleName = "string";
+			output.lastName = "string";
 			output.fullName = "string";
 			break;
 		case "phone":
@@ -200,6 +204,7 @@ function getFieldPropertyBadges(field: FormField): string[] {
 	if (field.properties?.dateMin)
 		badges.push(`from: ${field.properties.dateMin}`);
 	if (field.properties?.dateMax) badges.push(`to: ${field.properties.dateMax}`);
+	if (field.properties?.includeMiddleName) badges.push("middle name");
 	return badges;
 }
 
@@ -252,6 +257,9 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 	const [newFieldDateMax, setNewFieldDateMax] = useState("");
 	// Type-specific: time
 	const [newFieldTimeStep, setNewFieldTimeStep] = useState<number | "">("");
+	// Type-specific: name
+	const [newFieldIncludeMiddleName, setNewFieldIncludeMiddleName] =
+		useState(false);
 
 	// Edit field state
 	const [editingField, setEditingField] = useState<FormField | null>(null);
@@ -328,6 +336,7 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		setNewFieldDateMin("");
 		setNewFieldDateMax("");
 		setNewFieldTimeStep("");
+		setNewFieldIncludeMiddleName(false);
 	};
 
 	const buildFieldFromForm = (id: string, existing?: FormField): FormField => {
@@ -385,6 +394,9 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		if (newFieldType === "time" && newFieldTimeStep !== "") {
 			validation.step = Number(newFieldTimeStep);
 		}
+		if (newFieldType === "name") {
+			properties.includeMiddleName = newFieldIncludeMiddleName;
+		}
 
 		if (Object.keys(validation).length > 0) base.validation = validation;
 		if (Object.keys(properties).length > 0) base.properties = properties;
@@ -437,6 +449,7 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		setNewFieldTimeStep(
 			field.type === "time" ? (field.validation?.step ?? "") : "",
 		);
+		setNewFieldIncludeMiddleName(field.properties?.includeMiddleName ?? false);
 		setShowEditField(true);
 	};
 
@@ -582,6 +595,16 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 					/>
 				</div>
 			</div>
+
+			{newFieldType === "name" && (
+				<div className="flex items-center justify-between">
+					<Label>{t("fieldProperties.includeMiddleName")}</Label>
+					<Switch
+						checked={newFieldIncludeMiddleName}
+						onCheckedChange={setNewFieldIncludeMiddleName}
+					/>
+				</div>
+			)}
 
 			{["radio", "checkbox-group", "dropdown"].includes(newFieldType) && (
 				<div>

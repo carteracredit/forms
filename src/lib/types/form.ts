@@ -73,6 +73,8 @@ export interface FormField {
 		maxFileSize?: number;
 		/** Enable Google Places autocomplete for address */
 		enableAutocomplete?: boolean;
+		/** Include middle name sub-field in name field */
+		includeMiddleName?: boolean;
 		/** Minimum date (ISO string) for date/datetime fields */
 		dateMin?: string;
 		/** Maximum date (ISO string) for date/datetime fields */

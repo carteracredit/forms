@@ -60,14 +60,14 @@ export function FieldShowcase() {
 					required: true,
 				},
 				{
-					name: "placeholder",
-					type: "string",
-					description: t("fieldLibrary.hintText"),
-				},
-				{
 					name: "required",
 					type: "boolean",
 					description: t("fieldLibrary.fieldRequired"),
+				},
+				{
+					name: "includeMiddleName",
+					type: "boolean",
+					description: t("fieldLibrary.includeMiddleNameDesc"),
 				},
 			],
 			features: [
@@ -75,10 +75,16 @@ export function FieldShowcase() {
 				t("fieldLibrary.trimWhitespace"),
 				t("fieldLibrary.validationMinChars"),
 				t("fieldLibrary.supportsFullName"),
+				t("fieldLibrary.optionalMiddleName"),
 			],
-			inputSchema: { firstName: "John", lastName: "Doe" },
-			outputSchema: { fullName: "string" },
-			example: "John Doe",
+			inputSchema: { firstName: "John", middleName: "M.", lastName: "Doe" },
+			outputSchema: {
+				firstName: "string",
+				middleName: "string (optional)",
+				lastName: "string",
+				fullName: "string",
+			},
+			example: "John M. Doe",
 		},
 		{
 			type: "phone",
