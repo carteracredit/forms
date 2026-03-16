@@ -251,6 +251,7 @@ export const translations = {
 			maxFileSize: "Max File Size (MB)",
 			optionsComma: "Options (comma separated)",
 			optionsPlaceholder: "Option 1, Option 2, Option 3",
+			includeMiddleName: "Include Middle Name",
 		},
 
 		// Field Library
@@ -337,6 +338,8 @@ export const translations = {
 			trimWhitespace: "Automatic whitespace trimming",
 			validationMinChars: "Minimum character validation",
 			supportsFullName: "Supports full name with first and last",
+			optionalMiddleName: "Optional middle name sub-field (configurable)",
+			includeMiddleNameDesc: "Show middle name input field in the form",
 			autoFormatting: "Automatic phone number formatting",
 			internationalFormat: "International number format support",
 			validationPhoneStructure: "Phone number structure validation",
@@ -496,6 +499,16 @@ export const translations = {
 			maxValue: "Maximum value is {max}",
 			invalidJson: "Invalid JSON",
 			invalidJsonFormat: "Invalid JSON format",
+		},
+
+		// Name
+		name: {
+			firstName: "First Name",
+			firstNamePlaceholder: "John",
+			middleName: "Middle Name",
+			middleNamePlaceholder: "M.",
+			lastName: "Last Name",
+			lastNamePlaceholder: "Doe",
 		},
 
 		// Address
@@ -795,6 +808,7 @@ export const translations = {
 			maxFileSize: "Tamaño Máximo (MB)",
 			optionsComma: "Opciones (separadas por coma)",
 			optionsPlaceholder: "Opción 1, Opción 2, Opción 3",
+			includeMiddleName: "Incluir Segundo Nombre",
 		},
 
 		// Field Library
@@ -889,6 +903,8 @@ export const translations = {
 			trimWhitespace: "Recorte automático de espacios",
 			validationMinChars: "Validación de caracteres mínimos",
 			supportsFullName: "Soporta nombre completo con nombre y apellido",
+			optionalMiddleName: "Segundo nombre opcional (configurable)",
+			includeMiddleNameDesc: "Mostrar campo de segundo nombre en el formulario",
 			autoFormatting: "Formato automático de número de teléfono",
 			internationalFormat: "Soporte de formato internacional",
 			validationPhoneStructure: "Validación de estructura de teléfono",
@@ -1050,6 +1066,16 @@ export const translations = {
 			maxValue: "El valor máximo es {max}",
 			invalidJson: "JSON inválido",
 			invalidJsonFormat: "Formato JSON inválido",
+		},
+
+		// Name
+		name: {
+			firstName: "Nombre",
+			firstNamePlaceholder: "Juan",
+			middleName: "Segundo Nombre",
+			middleNamePlaceholder: "M.",
+			lastName: "Apellido",
+			lastNamePlaceholder: "García",
 		},
 
 		// Address

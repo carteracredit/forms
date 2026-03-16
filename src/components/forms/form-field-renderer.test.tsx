@@ -50,6 +50,32 @@ vi.mock("@/components/forms/address-input", () => ({
 	),
 }));
 
+// Mock NameInput
+vi.mock("@/components/forms/name-input", () => ({
+	NameInput: ({
+		value,
+		onChange,
+	}: {
+		value: unknown;
+		onChange: (v: unknown) => void;
+	}) => (
+		<div data-testid="name-input">
+			<input
+				data-testid="name-input-firstName"
+				value={
+					value && typeof value === "object" && "firstName" in value
+						? String((value as Record<string, unknown>).firstName)
+						: ""
+				}
+				onChange={(e) =>
+					onChange({ firstName: e.target.value, middleName: "", lastName: "" })
+				}
+				placeholder="name.firstNamePlaceholder"
+			/>
+		</div>
+	),
+}));
+
 describe("FormFieldRenderer", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -72,6 +98,52 @@ describe("FormFieldRenderer", () => {
 		);
 
 		expect(container.querySelector("input")).toBeInTheDocument();
+	});
+
+	it("should render name input as NameInput component", () => {
+		const onChange = vi.fn();
+		const field = createField({ type: "name" });
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value={null} onChange={onChange} />,
+		);
+
+		expect(
+			container.querySelector('[data-testid="name-input"]'),
+		).toBeInTheDocument();
+	});
+
+	it("should render name input as plain text in compact mode", () => {
+		const onChange = vi.fn();
+		const field = createField({ type: "name" });
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} compact />,
+		);
+
+		expect(container.querySelector("input")).toBeInTheDocument();
+		expect(
+			container.querySelector('[data-testid="name-input"]'),
+		).not.toBeInTheDocument();
+	});
+
+	it("should call onChange when name input changes", () => {
+		const onChange = vi.fn();
+		const field = createField({ type: "name" });
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value={null} onChange={onChange} />,
+		);
+
+		const firstNameInput = container.querySelector(
+			'input[placeholder="name.firstNamePlaceholder"]',
+		) as HTMLInputElement;
+		fireEvent.change(firstNameInput, { target: { value: "John" } });
+
+		expect(onChange).toHaveBeenCalledWith(
+			"test-field",
+			expect.objectContaining({ firstName: "John" }),
+		);
 	});
 
 	it("should call onChange when text input changes", () => {

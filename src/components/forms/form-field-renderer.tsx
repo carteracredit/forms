@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { PhoneInput } from "@/components/forms/phone-input";
 import { AddressInput } from "@/components/forms/address-input";
+import { NameInput } from "@/components/forms/name-input";
 import { Star } from "lucide-react";
 import { useState } from "react";
 
@@ -55,6 +56,39 @@ export function FormFieldRenderer({
 
 	switch (field.type) {
 		case "name":
+			return (
+				<div className="space-y-2">
+					<Label className={labelClass}>
+						{fieldLabel}
+						{field.required && <span className="text-destructive ml-1">*</span>}
+					</Label>
+					{compact ? (
+						<Input
+							value={
+								typeof value === "string"
+									? value
+									: value
+										? [value.firstName, value.middleName, value.lastName]
+												.filter(Boolean)
+												.join(" ")
+										: ""
+							}
+							onChange={(e) => onChange(field.id, e.target.value)}
+							placeholder={fieldPlaceholder}
+							required={field.required}
+							className={inputClass}
+						/>
+					) : (
+						<NameInput
+							value={value}
+							onChange={(val) => onChange(field.id, val)}
+							includeMiddleName={field.properties?.includeMiddleName}
+							largeText={largeText}
+						/>
+					)}
+				</div>
+			);
+
 		case "text":
 			return (
 				<div className="space-y-2">
