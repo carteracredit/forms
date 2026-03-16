@@ -1,3 +1,11 @@
+# [1.0.0-rc.11](https://github.com/carteracredit/forms/compare/v1.0.0-rc.10...v1.0.0-rc.11) (2026-03-16)
+
+
+### Features
+
+* add middle name support in name fields and enhance form editor ([9a28cbb](https://github.com/carteracredit/forms/commit/9a28cbb5c1a4262d82248d55aa93afa26d77dbec))
+* enhance address field schema in FieldShowcase and FormEditor ([394ff3f](https://github.com/carteracredit/forms/commit/394ff3f548a31eeb013008bb1d2562b8a3e5c0bf))
+
 # [1.0.0-rc.10](https://github.com/carteracredit/forms/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2026-03-16)
 
 
