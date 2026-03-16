@@ -1,3 +1,10 @@
+# [1.0.0-rc.10](https://github.com/carteracredit/forms/compare/v1.0.0-rc.9...v1.0.0-rc.10) (2026-03-16)
+
+
+### Features
+
+* add local development script for Next.js ([e75c998](https://github.com/carteracredit/forms/commit/e75c998f375fbcc82c46c3ce8f36c8243ced19a0))
+
 # [1.0.0-rc.9](https://github.com/carteracredit/forms/compare/v1.0.0-rc.8...v1.0.0-rc.9) (2026-03-12)
 
 
