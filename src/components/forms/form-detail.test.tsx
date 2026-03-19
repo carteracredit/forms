@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, fireEvent, cleanup } from "@testing-library/react";
+import { render, cleanup, waitFor } from "@testing-library/react";
 import { FormDetail } from "./form-detail";
 
-// Mock next/navigation
+const mockPush = vi.fn();
+
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({
-		push: vi.fn(),
+		push: mockPush,
 	}),
 }));
 
-// Mock LanguageProvider
 vi.mock("@/components/LanguageProvider", () => ({
 	useLanguage: () => ({
 		t: (key: string) => key,
@@ -18,12 +18,10 @@ vi.mock("@/components/LanguageProvider", () => ({
 	}),
 }));
 
-// Mock EditFormInfoDialog to avoid deep render chain
 vi.mock("./edit-form-info-dialog", () => ({
 	EditFormInfoDialog: () => null,
 }));
 
-// Mock SessionControls to avoid auth dependencies
 vi.mock("@/components/SessionControls", () => ({
 	SessionControls: () => null,
 }));
@@ -51,115 +49,108 @@ const mockForm = {
 	],
 };
 
-vi.mock("@/lib/form-store", () => ({
-	useFormStore: () => ({
-		selectedForm: mockForm,
-		selectedVersion: mockForm.versions[0],
-		setSelectedVersion: vi.fn(),
-		publishForm: vi.fn(),
-		archiveForm: vi.fn(),
-	}),
-}));
+const mockStoreState = {
+	selectedForm: mockForm,
+	selectedVersion: mockForm.versions[0],
+	setSelectedVersion: vi.fn(),
+	setSelectedForm: vi.fn(),
+	publishForm: vi.fn(),
+	archiveForm: vi.fn(),
+	refreshForm: vi.fn().mockResolvedValue(undefined),
+};
+
+vi.mock("@/lib/form-store", () => {
+	const hook = Object.assign(() => mockStoreState, {
+		getState: () => mockStoreState,
+	});
+	return { useFormStore: hook };
+});
 
 describe("FormDetail", () => {
 	afterEach(() => {
 		cleanup();
+		mockPush.mockClear();
 	});
 
-	it("should render form name and description", () => {
-		const onBack = vi.fn();
-		const onEdit = vi.fn();
+	it("should render form name and description", async () => {
+		const { container } = render(<FormDetail formId="form-1" />);
 
+		await waitFor(() => {
+			expect(container).toHaveTextContent("Test Form");
+			expect(container).toHaveTextContent("A test form description");
+		});
+	});
+
+	it("should navigate to list when back button is clicked", async () => {
+		const { getByText } = render(<FormDetail formId="form-1" />);
+
+		await waitFor(() => {
+			expect(getByText("common.back")).toBeInTheDocument();
+		});
+
+		getByText("common.back").click();
+		expect(mockPush).toHaveBeenCalledWith("/");
+	});
+
+	it("should navigate to editor when edit fields button is clicked", async () => {
+		const { getByText } = render(<FormDetail formId="form-1" />);
+
+		await waitFor(() => {
+			expect(getByText("formDetail.editFields")).toBeInTheDocument();
+		});
+
+		getByText("formDetail.editFields").click();
+		expect(mockPush).toHaveBeenCalledWith("/form-1/editor");
+	});
+
+	it("should display form fields", async () => {
+		const { container } = render(<FormDetail formId="form-1" />);
+
+		await waitFor(() => {
+			expect(container).toHaveTextContent("Name");
+			expect(container).toHaveTextContent("fieldTypes.text");
+		});
+	});
+
+	it("should display version history section", async () => {
+		const { container } = render(<FormDetail formId="form-1" />);
+
+		await waitFor(() => {
+			expect(container).toHaveTextContent("formDetail.versionHistory");
+		});
+	});
+
+	it("should have Field Library tab", async () => {
+		const { getByText } = render(<FormDetail formId="form-1" />);
+
+		await waitFor(() => {
+			expect(getByText("formDetail.fieldLibrary")).toBeInTheDocument();
+		});
+	});
+
+	it("should render with fieldLibrary as initial tab when specified", async () => {
 		const { container } = render(
-			<FormDetail onBack={onBack} onEdit={onEdit} />,
+			<FormDetail formId="form-1" initialTab="fieldLibrary" />,
 		);
 
-		expect(container).toHaveTextContent("Test Form");
-		expect(container).toHaveTextContent("A test form description");
+		await waitFor(() => {
+			expect(container).toBeInTheDocument();
+		});
 	});
 
-	it("should call onBack when back button is clicked", () => {
-		const onBack = vi.fn();
-		const onEdit = vi.fn();
+	it("should show Edit Info button", async () => {
+		const { getByText } = render(<FormDetail formId="form-1" />);
 
-		const { getByText } = render(
-			<FormDetail onBack={onBack} onEdit={onEdit} />,
-		);
-
-		const backButton = getByText("common.back");
-		fireEvent.click(backButton);
-
-		expect(onBack).toHaveBeenCalled();
+		await waitFor(() => {
+			expect(getByText("formDetail.editInfo")).toBeInTheDocument();
+		});
 	});
 
-	it("should call onEdit when edit fields button is clicked", () => {
-		const onBack = vi.fn();
-		const onEdit = vi.fn();
+	it("should load form data on mount", async () => {
+		render(<FormDetail formId="form-1" />);
 
-		const { getByText } = render(
-			<FormDetail onBack={onBack} onEdit={onEdit} />,
-		);
-
-		const editButton = getByText("formDetail.editFields");
-		fireEvent.click(editButton);
-
-		expect(onEdit).toHaveBeenCalled();
-	});
-
-	it("should display form fields", () => {
-		const onBack = vi.fn();
-		const onEdit = vi.fn();
-
-		const { container } = render(
-			<FormDetail onBack={onBack} onEdit={onEdit} />,
-		);
-
-		expect(container).toHaveTextContent("Name");
-		expect(container).toHaveTextContent("fieldTypes.text");
-	});
-
-	it("should display version history section", () => {
-		const onBack = vi.fn();
-		const onEdit = vi.fn();
-
-		const { container } = render(
-			<FormDetail onBack={onBack} onEdit={onEdit} />,
-		);
-
-		expect(container).toHaveTextContent("formDetail.versionHistory");
-	});
-
-	it("should have Field Library tab", () => {
-		const onBack = vi.fn();
-		const onEdit = vi.fn();
-
-		const { getByText } = render(
-			<FormDetail onBack={onBack} onEdit={onEdit} />,
-		);
-
-		const fieldLibraryTab = getByText("formDetail.fieldLibrary");
-		expect(fieldLibraryTab).toBeInTheDocument();
-	});
-
-	it("should render with fieldLibrary as initial tab when specified", () => {
-		const onBack = vi.fn();
-		const onEdit = vi.fn();
-
-		const { container } = render(
-			<FormDetail onBack={onBack} onEdit={onEdit} initialTab="fieldLibrary" />,
-		);
-
-		expect(container).toBeInTheDocument();
-	});
-
-	it("should show Edit Info button", () => {
-		const onBack = vi.fn();
-		const onEdit = vi.fn();
-
-		const { getByText } = render(
-			<FormDetail onBack={onBack} onEdit={onEdit} />,
-		);
-
-		expect(getByText("formDetail.editInfo")).toBeInTheDocument();
+		await waitFor(() => {
+			expect(mockStoreState.refreshForm).toHaveBeenCalledWith("form-1");
+		});
 	});
 });

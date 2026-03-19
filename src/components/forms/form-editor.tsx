@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -66,6 +66,7 @@ import {
 	Pencil,
 	Rocket,
 	RefreshCw,
+	Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -219,13 +220,14 @@ function getFieldPropertyBadges(field: FormField): string[] {
 }
 
 interface FormEditorProps {
-	onBack: () => void;
-	onSave: () => void;
+	formId: string;
 }
 
-export function FormEditor({ onBack, onSave }: FormEditorProps) {
+export function FormEditor({ formId }: FormEditorProps) {
 	const router = useRouter();
-	const { selectedForm, saveFieldsDraft, publishForm } = useFormStore();
+	const { selectedForm, saveFieldsDraft, publishForm, updateEditingFields } =
+		useFormStore();
+	const [isLoadingForm, setIsLoadingForm] = useState(true);
 	const { t } = useLanguage();
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [showAddField, setShowAddField] = useState(false);
@@ -284,18 +286,33 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 	const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
 
 	useEffect(() => {
+		const load = async () => {
+			setIsLoadingForm(true);
+			await useFormStore.getState().refreshForm(formId);
+			useFormStore.getState().setSelectedForm(formId);
+			const form = useFormStore.getState().selectedForm;
+			if (form) {
+				useFormStore.getState().startEditing(form);
+			}
+			setIsLoadingForm(false);
+		};
+		load();
+
+		return () => {
+			useFormStore.getState().cancelEditing();
+		};
+	}, [formId]);
+
+	useEffect(() => {
 		if (selectedForm) {
-			// Initialize from draft fields, not a published version
 			setFields(JSON.parse(JSON.stringify(selectedForm.draftFields)));
 		}
 	}, [selectedForm]);
 
-	if (!selectedForm) {
+	if (isLoadingForm || !selectedForm) {
 		return (
-			<div className="flex items-center justify-center h-full">
-				<p className="text-muted-foreground">
-					{t("formEditor.noFormSelected")}
-				</p>
+			<div className="flex items-center justify-center h-screen">
+				<Loader2 className="h-8 w-8 animate-spin text-primary" />
 			</div>
 		);
 	}
@@ -509,12 +526,11 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		if (!selectedForm) return;
 		setIsPublishing(true);
 		try {
-			// Save current fields as draft first, then publish
 			await saveFieldsDraft(selectedForm.id, fields);
 			await publishForm(selectedForm.id);
 			toast.success(t("formEditor.published"));
 			setShowPublishDialog(false);
-			onSave();
+			router.push(`/${formId}`);
 		} catch {
 			toast.error(t("formEditor.publishError"));
 		} finally {
@@ -880,7 +896,7 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={onBack}
+							onClick={() => router.push(`/${formId}`)}
 							className="gap-2 px-2 md:px-3"
 						>
 							<ArrowLeft className="h-4 w-4" />
@@ -916,7 +932,10 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						</Button>
 						<Button
 							variant="outline"
-							onClick={() => router.push(`/preview/${selectedForm.id}`)}
+							onClick={() => {
+								updateEditingFields(fields);
+								router.push(`/preview/${selectedForm.id}?from=editor`);
+							}}
 							className="gap-2 flex-1 sm:flex-none"
 							size="sm"
 						>

@@ -2,14 +2,14 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import { FormsHomeView } from "./FormsHomeView";
 
-// Mock next/navigation
+const mockPush = vi.fn();
+
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({
-		push: vi.fn(),
+		push: mockPush,
 	}),
 }));
 
-// Mock LanguageProvider
 vi.mock("@/components/LanguageProvider", () => ({
 	useLanguage: () => ({
 		t: (key: string) => key,
@@ -19,7 +19,6 @@ vi.mock("@/components/LanguageProvider", () => ({
 	}),
 }));
 
-// Mock useAuthSession
 vi.mock("@/lib/auth/useAuthSession", () => ({
 	useAuthSession: () => ({
 		data: {
@@ -36,25 +35,21 @@ vi.mock("@/lib/auth/useAuthSession", () => ({
 	}),
 }));
 
-// Mock auth config
 vi.mock("@/lib/auth/config", () => ({
 	getAuthAppUrl: () => "https://auth.example.com",
 	getAuthServiceUrl: () => "https://auth-svc.example.com",
 }));
 
-// Mock authClient
 vi.mock("@/lib/auth/authClient", () => ({
 	authClient: {
 		signOut: vi.fn().mockResolvedValue(undefined),
 	},
 }));
 
-// Mock auth actions
 vi.mock("@/lib/auth/actions", () => ({
 	logout: vi.fn().mockResolvedValue(undefined),
 }));
 
-// Mock SessionControls
 vi.mock("@/components/SessionControls", () => ({
 	SessionControls: () => (
 		<div data-testid="session-controls">
@@ -64,12 +59,10 @@ vi.mock("@/components/SessionControls", () => ({
 	),
 }));
 
-// Mock next/image
 vi.mock("next/image", () => ({
 	default: (props: { alt: string }) => <img {...props} />,
 }));
 
-// Mock form components
 vi.mock("@/components/forms/forms-list", () => ({
 	FormsList: ({
 		onViewForm,
@@ -84,44 +77,6 @@ vi.mock("@/components/forms/forms-list", () => ({
 			</button>
 			<button onClick={() => onEditForm("form-1")} data-testid="edit-btn">
 				Edit Form
-			</button>
-		</div>
-	),
-}));
-
-vi.mock("@/components/forms/form-detail", () => ({
-	FormDetail: ({
-		onBack,
-		onEdit,
-	}: {
-		onBack: () => void;
-		onEdit: () => void;
-	}) => (
-		<div data-testid="form-detail">
-			<button onClick={onBack} data-testid="back-btn">
-				Back
-			</button>
-			<button onClick={onEdit} data-testid="edit-detail-btn">
-				Edit
-			</button>
-		</div>
-	),
-}));
-
-vi.mock("@/components/forms/form-editor", () => ({
-	FormEditor: ({
-		onBack,
-		onSave,
-	}: {
-		onBack: () => void;
-		onSave: () => void;
-	}) => (
-		<div data-testid="form-editor">
-			<button onClick={onBack} data-testid="cancel-btn">
-				Cancel
-			</button>
-			<button onClick={onSave} data-testid="save-btn">
-				Save
 			</button>
 		</div>
 	),
@@ -155,7 +110,6 @@ vi.mock("@/components/forms/create-form-dialog", () => ({
 		) : null,
 }));
 
-// Mock form store
 vi.mock("@/lib/form-store", () => ({
 	useFormStore: Object.assign(
 		() => ({
@@ -167,15 +121,12 @@ vi.mock("@/lib/form-store", () => ({
 					currentVersion: 1,
 				},
 			],
-			setSelectedForm: vi.fn(),
 			createForm: vi.fn().mockResolvedValue({
 				id: "new-form",
 				name: "New Form",
 				versions: [{ id: "v1", version: 1, fields: [] }],
 				currentVersion: 1,
 			}),
-			startEditing: vi.fn(),
-			cancelEditing: vi.fn(),
 			fetchForms: vi.fn().mockResolvedValue(undefined),
 			isLoading: false,
 			error: null,
@@ -190,15 +141,8 @@ vi.mock("@/lib/form-store", () => ({
 						currentVersion: 1,
 					},
 				],
-				selectedForm: {
-					id: "form-1",
-					name: "Test Form",
-					versions: [{ id: "v1", version: 1, fields: [] }],
-					currentVersion: 1,
-				},
 				refreshForm: vi.fn().mockResolvedValue(undefined),
 				setSelectedForm: vi.fn(),
-				startEditing: vi.fn(),
 			}),
 		},
 	),
@@ -207,6 +151,7 @@ vi.mock("@/lib/form-store", () => ({
 describe("FormsHomeView", () => {
 	afterEach(() => {
 		cleanup();
+		mockPush.mockClear();
 	});
 
 	it("should render header and forms list", () => {
@@ -223,7 +168,7 @@ describe("FormsHomeView", () => {
 		).toBeInTheDocument();
 	});
 
-	it("should navigate to form detail when view is clicked", async () => {
+	it("should navigate to form detail route when view is clicked", () => {
 		const { container } = render(<FormsHomeView />);
 
 		const viewBtn = container.querySelector(
@@ -231,14 +176,10 @@ describe("FormsHomeView", () => {
 		) as HTMLElement;
 		fireEvent.click(viewBtn);
 
-		await waitFor(() => {
-			expect(
-				container.querySelector('[data-testid="form-detail"]'),
-			).toBeInTheDocument();
-		});
+		expect(mockPush).toHaveBeenCalledWith("/form-1");
 	});
 
-	it("should navigate to editor when edit is clicked", async () => {
+	it("should navigate to editor route when edit is clicked", () => {
 		const { container } = render(<FormsHomeView />);
 
 		const editBtn = container.querySelector(
@@ -246,39 +187,7 @@ describe("FormsHomeView", () => {
 		) as HTMLElement;
 		fireEvent.click(editBtn);
 
-		await waitFor(() => {
-			expect(
-				container.querySelector('[data-testid="form-editor"]'),
-			).toBeInTheDocument();
-		});
-	});
-
-	it("should return to list when back is clicked from detail", async () => {
-		const { container } = render(<FormsHomeView />);
-
-		// Go to detail
-		const viewBtn = container.querySelector(
-			'[data-testid="view-btn"]',
-		) as HTMLElement;
-		fireEvent.click(viewBtn);
-
-		await waitFor(() => {
-			expect(
-				container.querySelector('[data-testid="form-detail"]'),
-			).toBeInTheDocument();
-		});
-
-		// Go back
-		const backBtn = container.querySelector(
-			'[data-testid="back-btn"]',
-		) as HTMLElement;
-		fireEvent.click(backBtn);
-
-		await waitFor(() => {
-			expect(
-				container.querySelector('[data-testid="forms-list"]'),
-			).toBeInTheDocument();
-		});
+		expect(mockPush).toHaveBeenCalledWith("/form-1/editor");
 	});
 
 	it("should open create dialog when create button is clicked", async () => {
@@ -291,6 +200,27 @@ describe("FormsHomeView", () => {
 			expect(
 				container.querySelector('[data-testid="create-dialog"]'),
 			).toBeInTheDocument();
+		});
+	});
+
+	it("should navigate to detail with tab param after creating a form", async () => {
+		const { container, getByText } = render(<FormsHomeView />);
+
+		fireEvent.click(getByText("formsList.createForm"));
+
+		await waitFor(() => {
+			expect(
+				container.querySelector('[data-testid="create-dialog"]'),
+			).toBeInTheDocument();
+		});
+
+		const createBtn = container.querySelector(
+			'[data-testid="create-btn"]',
+		) as HTMLElement;
+		fireEvent.click(createBtn);
+
+		await waitFor(() => {
+			expect(mockPush).toHaveBeenCalledWith("/new-form?tab=fieldLibrary");
 		});
 	});
 });
