@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import {
+	render,
+	waitFor,
+	screen,
+	within,
+	fireEvent,
+} from "@testing-library/react";
 import { FormEditor } from "./form-editor";
+import type { FormField } from "@/lib/types/form";
 
 const mockPush = vi.fn();
 
@@ -62,7 +69,7 @@ const mockStoreState = {
 	setSelectedForm: vi.fn(),
 	refreshForm: vi.fn().mockResolvedValue(undefined),
 	isEditing: false,
-	editingFields: [],
+	editingFields: [] as FormField[],
 };
 
 vi.mock("@/lib/form-store", () => {
@@ -75,6 +82,9 @@ vi.mock("@/lib/form-store", () => {
 describe("FormEditor", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockStoreState.isEditing = false;
+		mockStoreState.editingFields = [];
+		mockStoreState.selectedForm = mockForm;
 	});
 
 	it("should render form editor with form name", async () => {
@@ -86,7 +96,7 @@ describe("FormEditor", () => {
 		});
 	});
 
-	it("should navigate to detail when cancel button is clicked", async () => {
+	it("should navigate directly when cancel is clicked with no unsaved changes", async () => {
 		const { container } = render(<FormEditor formId="form-1" />);
 
 		await waitFor(() => {
@@ -102,6 +112,100 @@ describe("FormEditor", () => {
 			cancelButton.click();
 			expect(mockPush).toHaveBeenCalledWith("/form-1");
 		}
+	});
+
+	it("should show leave confirmation dialog when cancel is clicked with unsaved changes", async () => {
+		mockStoreState.isEditing = true;
+		mockStoreState.editingFields = [
+			{ id: "f1", type: "text", label: "Existing Field", required: true },
+			{ id: "f2", type: "email", label: "New Email", required: false },
+		];
+
+		const { container } = render(<FormEditor formId="form-1" />);
+
+		await waitFor(() => {
+			expect(container).toHaveTextContent("formEditor.editFields");
+		});
+
+		const buttons = container.querySelectorAll("button");
+		const cancelButton = Array.from(buttons).find(
+			(btn) => btn.textContent === "common.cancel",
+		);
+
+		expect(cancelButton).toBeDefined();
+		cancelButton!.click();
+
+		await waitFor(() => {
+			expect(screen.getByText("formEditor.leaveTitle")).toBeInTheDocument();
+			expect(screen.getByText("formEditor.leaveMessage")).toBeInTheDocument();
+		});
+
+		expect(mockPush).not.toHaveBeenCalled();
+	});
+
+	it("should stay on editor when clicking stay in leave dialog", async () => {
+		mockStoreState.isEditing = true;
+		mockStoreState.editingFields = [
+			{ id: "f1", type: "text", label: "Existing Field", required: true },
+			{ id: "f2", type: "email", label: "New Email", required: false },
+		];
+
+		const { container } = render(<FormEditor formId="form-1" />);
+
+		await waitFor(() => {
+			expect(container).toHaveTextContent("formEditor.editFields");
+		});
+
+		const cancelButton = Array.from(container.querySelectorAll("button")).find(
+			(btn) => btn.textContent === "common.cancel",
+		);
+		cancelButton!.click();
+
+		let dialog: HTMLElement;
+		await waitFor(() => {
+			dialog = screen.getByRole("dialog");
+			expect(
+				within(dialog).getByText("formEditor.leaveTitle"),
+			).toBeInTheDocument();
+		});
+
+		fireEvent.click(within(dialog!).getByText("formEditor.leaveCancel"));
+
+		expect(mockPush).not.toHaveBeenCalled();
+		expect(mockStoreState.cancelEditing).not.toHaveBeenCalled();
+		expect(container).toHaveTextContent("formEditor.editFields");
+	});
+
+	it("should navigate away when clicking leave in leave dialog", async () => {
+		mockStoreState.isEditing = true;
+		mockStoreState.editingFields = [
+			{ id: "f1", type: "text", label: "Existing Field", required: true },
+			{ id: "f2", type: "email", label: "New Email", required: false },
+		];
+
+		const { container } = render(<FormEditor formId="form-1" />);
+
+		await waitFor(() => {
+			expect(container).toHaveTextContent("formEditor.editFields");
+		});
+
+		const cancelButton = Array.from(container.querySelectorAll("button")).find(
+			(btn) => btn.textContent === "common.cancel",
+		);
+		cancelButton!.click();
+
+		let dialog: HTMLElement;
+		await waitFor(() => {
+			dialog = screen.getByRole("dialog");
+			expect(
+				within(dialog).getByText("formEditor.leaveTitle"),
+			).toBeInTheDocument();
+		});
+
+		fireEvent.click(within(dialog!).getByText("formEditor.leaveConfirm"));
+
+		expect(mockStoreState.cancelEditing).toHaveBeenCalled();
+		expect(mockPush).toHaveBeenCalledWith("/form-1");
 	});
 
 	it("should show existing fields", async () => {

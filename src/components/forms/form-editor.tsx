@@ -1,11 +1,12 @@
 "use client";
 
 import type React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { FormField, FormFieldType } from "@/lib/types/form";
+import { normalizeFieldsForChecksum } from "@/lib/checksum";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import {
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	DialogFooter,
@@ -288,12 +290,60 @@ export function FormEditor({ formId }: FormEditorProps) {
 	// Expanded field for properties/schema view
 	const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
 
+	// Unsaved changes confirmation
+	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+	const pendingNavigationRef = useRef<string | null>(null);
+
+	const savedFieldsRef = useRef<string>("");
+
+	const hasUnsavedChanges = useMemo(
+		() => normalizeFieldsForChecksum(fields) !== savedFieldsRef.current,
+		[fields],
+	);
+
+	const confirmLeave = useCallback(() => {
+		setShowLeaveDialog(false);
+		useFormStore.getState().cancelEditing();
+		if (pendingNavigationRef.current) {
+			router.push(pendingNavigationRef.current);
+			pendingNavigationRef.current = null;
+		}
+	}, [router]);
+
+	const requestLeave = useCallback(
+		(path: string) => {
+			if (hasUnsavedChanges) {
+				pendingNavigationRef.current = path;
+				setShowLeaveDialog(true);
+			} else {
+				useFormStore.getState().cancelEditing();
+				router.push(path);
+			}
+		},
+		[hasUnsavedChanges, router],
+	);
+
+	useEffect(() => {
+		if (!hasUnsavedChanges) return;
+		const handler = (e: BeforeUnloadEvent) => {
+			e.preventDefault();
+		};
+		window.addEventListener("beforeunload", handler);
+		return () => window.removeEventListener("beforeunload", handler);
+	}, [hasUnsavedChanges]);
+
 	useEffect(() => {
 		const load = async () => {
 			const state = useFormStore.getState();
 
 			if (state.isEditing && state.selectedForm?.id === formId) {
-				setFields(JSON.parse(JSON.stringify(state.editingFields)));
+				const restoredFields: FormField[] = JSON.parse(
+					JSON.stringify(state.editingFields),
+				);
+				setFields(restoredFields);
+				savedFieldsRef.current = normalizeFieldsForChecksum(
+					state.selectedForm.draftFields,
+				);
 				setIsLoadingForm(false);
 				return;
 			}
@@ -305,6 +355,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 			if (form) {
 				useFormStore.getState().startEditing(form);
 				setFields(JSON.parse(JSON.stringify(form.draftFields)));
+				savedFieldsRef.current = normalizeFieldsForChecksum(form.draftFields);
 			}
 			setIsLoadingForm(false);
 		};
@@ -516,6 +567,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 				return;
 			}
 			await saveFieldsDraft(selectedForm.id, fields);
+			savedFieldsRef.current = normalizeFieldsForChecksum(fields);
 			toast.success(t("formEditor.draftSaved"));
 		} catch {
 			toast.error(t("formEditor.saveDraftError"));
@@ -899,10 +951,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={() => {
-								useFormStore.getState().cancelEditing();
-								router.push(`/${formId}`);
-							}}
+							onClick={() => requestLeave(`/${formId}`)}
 							className="gap-2 px-2 md:px-3"
 						>
 							<ArrowLeft className="h-4 w-4" />
@@ -1283,6 +1332,32 @@ export function FormEditor({ formId }: FormEditorProps) {
 						</Button>
 						<Button onClick={handlePublish} disabled={isPublishing}>
 							{isPublishing ? t("common.loading") : t("formEditor.publish")}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Unsaved Changes Confirmation Dialog */}
+			<Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>{t("formEditor.leaveTitle")}</DialogTitle>
+						<DialogDescription>
+							{t("formEditor.leaveMessage")}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setShowLeaveDialog(false);
+								pendingNavigationRef.current = null;
+							}}
+						>
+							{t("formEditor.leaveCancel")}
+						</Button>
+						<Button variant="destructive" onClick={confirmLeave}>
+							{t("formEditor.leaveConfirm")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
