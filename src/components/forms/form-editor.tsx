@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -227,7 +227,10 @@ export function FormEditor({ formId }: FormEditorProps) {
 	const router = useRouter();
 	const { selectedForm, saveFieldsDraft, publishForm, updateEditingFields } =
 		useFormStore();
-	const [isLoadingForm, setIsLoadingForm] = useState(true);
+	const [isLoadingForm, setIsLoadingForm] = useState(() => {
+		const state = useFormStore.getState();
+		return !(state.isEditing && state.selectedForm?.id === formId);
+	});
 	const { t } = useLanguage();
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [showAddField, setShowAddField] = useState(false);
@@ -287,27 +290,26 @@ export function FormEditor({ formId }: FormEditorProps) {
 
 	useEffect(() => {
 		const load = async () => {
+			const state = useFormStore.getState();
+
+			if (state.isEditing && state.selectedForm?.id === formId) {
+				setFields(JSON.parse(JSON.stringify(state.editingFields)));
+				setIsLoadingForm(false);
+				return;
+			}
+
 			setIsLoadingForm(true);
 			await useFormStore.getState().refreshForm(formId);
 			useFormStore.getState().setSelectedForm(formId);
 			const form = useFormStore.getState().selectedForm;
 			if (form) {
 				useFormStore.getState().startEditing(form);
+				setFields(JSON.parse(JSON.stringify(form.draftFields)));
 			}
 			setIsLoadingForm(false);
 		};
 		load();
-
-		return () => {
-			useFormStore.getState().cancelEditing();
-		};
 	}, [formId]);
-
-	useEffect(() => {
-		if (selectedForm) {
-			setFields(JSON.parse(JSON.stringify(selectedForm.draftFields)));
-		}
-	}, [selectedForm]);
 
 	if (isLoadingForm || !selectedForm) {
 		return (
@@ -530,6 +532,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 			await publishForm(selectedForm.id);
 			toast.success(t("formEditor.published"));
 			setShowPublishDialog(false);
+			useFormStore.getState().cancelEditing();
 			router.push(`/${formId}`);
 		} catch {
 			toast.error(t("formEditor.publishError"));
@@ -896,7 +899,10 @@ export function FormEditor({ formId }: FormEditorProps) {
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={() => router.push(`/${formId}`)}
+							onClick={() => {
+								useFormStore.getState().cancelEditing();
+								router.push(`/${formId}`);
+							}}
 							className="gap-2 px-2 md:px-3"
 						>
 							<ArrowLeft className="h-4 w-4" />

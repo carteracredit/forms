@@ -89,7 +89,14 @@ export default function FormPreviewPage() {
 	const { t, getFieldLabel } = useLanguage();
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [formData, setFormData] = useState<Record<string, any>>({});
-	const [isLoadingForm, setIsLoadingForm] = useState(true);
+	const [isLoadingForm, setIsLoadingForm] = useState(() => {
+		const state = useFormStore.getState();
+		return !(
+			state.isEditing &&
+			state.editingFields.length > 0 &&
+			state.selectedForm?.id === formId
+		);
+	});
 	const [viewport, setViewport] = useState<ViewportSize>("desktop");
 	const [showOutput, setShowOutput] = useState(false);
 	const [customInputSchema, setCustomInputSchema] = useState("");
@@ -99,6 +106,16 @@ export default function FormPreviewPage() {
 	const [zoom, setZoom] = useState(100);
 
 	useEffect(() => {
+		const state = useFormStore.getState();
+		if (
+			state.isEditing &&
+			state.editingFields.length > 0 &&
+			state.selectedForm?.id === formId
+		) {
+			setIsLoadingForm(false);
+			return;
+		}
+
 		const load = async () => {
 			setIsLoadingForm(true);
 			if (formId) {
