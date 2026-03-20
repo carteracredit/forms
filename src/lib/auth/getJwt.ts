@@ -1,8 +1,10 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { getAuthServiceUrl, getAuthAppUrl } from "./config";
 
 /**
  * Retrieves a JWT token from the auth service using session cookies.
+ * Wrapped in React.cache() to deduplicate calls within the same request.
  *
  * This function calls the `/api/auth/token` endpoint provided by better-auth's
  * JWT plugin to exchange session cookies for a JWT token that can be used
@@ -19,7 +21,7 @@ import { getAuthServiceUrl, getAuthAppUrl } from "./config";
  *   });
  * }
  */
-export async function getJwt(): Promise<string | null> {
+export const getJwt = cache(async function getJwt(): Promise<string | null> {
 	const cookieStore = await cookies();
 	const cookieHeader = cookieStore.toString();
 
@@ -54,4 +56,4 @@ export async function getJwt(): Promise<string | null> {
 		console.error("Error fetching JWT:", error);
 		return null;
 	}
-}
+});

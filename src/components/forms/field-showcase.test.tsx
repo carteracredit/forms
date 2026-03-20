@@ -11,7 +11,8 @@ vi.mock("@/components/LanguageProvider", () => ({
 	}),
 }));
 
-describe("FieldShowcase", () => {
+// FieldShowcase renders 18 cards with Radix Tabs; jsdom runs can exceed 5s on CI.
+describe("FieldShowcase", { timeout: 20_000 }, () => {
 	afterEach(() => {
 		cleanup();
 	});

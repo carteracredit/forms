@@ -61,7 +61,8 @@ vi.mock("@/lib/form-store", () => ({
 	}),
 }));
 
-describe("FormDetail", () => {
+// FormDetail includes FieldShowcase (18 field cards + Radix Tabs); allow headroom on CI.
+describe("FormDetail", { timeout: 20_000 }, () => {
 	afterEach(() => {
 		cleanup();
 	});
