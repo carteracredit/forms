@@ -1,10 +1,11 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
+import type { FormField } from "@/lib/types/form";
 import { FormFieldRenderer } from "@/components/forms/form-field-renderer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,6 +33,7 @@ import {
 	ZoomOut,
 	Contrast,
 	Type,
+	Loader2,
 } from "lucide-react";
 
 type ViewportSize = "desktop" | "tablet" | "mobile";
@@ -49,14 +51,52 @@ function getViewportWidth(viewport: ViewportSize): string {
 	return viewportSizes[viewport].width;
 }
 
+function getDefaultFieldValue(field: FormField): unknown {
+	switch (field.type) {
+		case "name":
+			return { firstName: "", middleName: "", lastName: "" };
+		case "checkbox-group":
+			return [];
+		case "checkbox":
+			return false;
+		case "address":
+			return {
+				street: "",
+				street2: "",
+				city: "",
+				state: "",
+				zip: "",
+				country: "",
+			};
+		default:
+			return "";
+	}
+}
+
 export default function FormPreviewPage() {
 	const params = useParams();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const formId = params.formId as string;
-	const { setSelectedForm, selectedForm, selectedVersion } = useFormStore();
+	const cameFromEditor = searchParams.get("from") === "editor";
+	const {
+		selectedForm,
+		selectedVersion,
+		isEditing,
+		editingFields,
+		setSelectedForm,
+	} = useFormStore();
 	const { t, getFieldLabel } = useLanguage();
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [formData, setFormData] = useState<Record<string, any>>({});
+	const [isLoadingForm, setIsLoadingForm] = useState(() => {
+		const state = useFormStore.getState();
+		return !(
+			state.isEditing &&
+			state.editingFields.length > 0 &&
+			state.selectedForm?.id === formId
+		);
+	});
 	const [viewport, setViewport] = useState<ViewportSize>("desktop");
 	const [showOutput, setShowOutput] = useState(false);
 	const [customInputSchema, setCustomInputSchema] = useState("");
@@ -66,65 +106,61 @@ export default function FormPreviewPage() {
 	const [zoom, setZoom] = useState(100);
 
 	useEffect(() => {
-		if (formId) {
-			setSelectedForm(formId);
+		const state = useFormStore.getState();
+		if (
+			state.isEditing &&
+			state.editingFields.length > 0 &&
+			state.selectedForm?.id === formId
+		) {
+			setIsLoadingForm(false);
+			return;
 		}
-	}, [formId, setSelectedForm]);
+
+		const load = async () => {
+			setIsLoadingForm(true);
+			if (formId) {
+				await useFormStore.getState().refreshForm(formId);
+				useFormStore.getState().setSelectedForm(formId);
+			}
+			setIsLoadingForm(false);
+		};
+		load();
+	}, [formId]);
+
+	const previewFields: FormField[] = useMemo(() => {
+		if (isEditing && editingFields.length > 0) return editingFields;
+		if (selectedForm?.draftFields?.length) return selectedForm.draftFields;
+		if (selectedVersion) return selectedVersion.fields;
+		return [];
+	}, [isEditing, editingFields, selectedForm, selectedVersion]);
 
 	useEffect(() => {
-		if (!selectedVersion) return;
-		if (selectedVersion.schema?.input) {
-			setCustomInputSchema(
-				JSON.stringify(selectedVersion.schema.input, null, 2),
-			);
-			// Initial pre-fill from version schema
-			const schema = selectedVersion.schema.input as Record<string, unknown>;
-			const initial: Record<string, unknown> = {};
-			selectedVersion.fields.forEach((field) => {
+		if (previewFields.length === 0) return;
+
+		const schema =
+			selectedVersion?.schema?.input &&
+			!isEditing &&
+			selectedForm?.draftFields?.length === 0
+				? (selectedVersion.schema.input as Record<string, unknown>)
+				: null;
+
+		if (schema) {
+			setCustomInputSchema(JSON.stringify(schema, null, 2));
+		}
+
+		const initial: Record<string, unknown> = {};
+		previewFields.forEach((field) => {
+			if (schema) {
 				const schemaKey = field.label.toLowerCase().replace(/\s+/g, "_");
 				if (schema[schemaKey] !== undefined) {
 					initial[field.id] = schema[schemaKey];
-				} else if (field.type === "checkbox-group") {
-					initial[field.id] = [];
-				} else if (field.type === "checkbox") {
-					initial[field.id] = false;
-				} else if (field.type === "address") {
-					initial[field.id] = {
-						street: "",
-						street2: "",
-						city: "",
-						state: "",
-						zip: "",
-						country: "",
-					};
-				} else {
-					initial[field.id] = "";
+					return;
 				}
-			});
-			setFormData(initial as Record<string, unknown>);
-		} else {
-			const initial: Record<string, unknown> = {};
-			selectedVersion.fields.forEach((field) => {
-				if (field.type === "checkbox-group") {
-					initial[field.id] = [];
-				} else if (field.type === "checkbox") {
-					initial[field.id] = false;
-				} else if (field.type === "address") {
-					initial[field.id] = {
-						street: "",
-						street2: "",
-						city: "",
-						state: "",
-						zip: "",
-						country: "",
-					};
-				} else {
-					initial[field.id] = "";
-				}
-			});
-			setFormData(initial as Record<string, unknown>);
-		}
-	}, [selectedVersion]);
+			}
+			initial[field.id] = getDefaultFieldValue(field);
+		});
+		setFormData(initial);
+	}, [previewFields, selectedVersion, isEditing, selectedForm?.draftFields]);
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const handleFieldChange = (fieldId: string, value: any) => {
@@ -138,34 +174,19 @@ export default function FormPreviewPage() {
 
 	const handleReset = () => {
 		const initial: Record<string, unknown> = {};
-		selectedVersion?.fields.forEach((field) => {
-			if (field.type === "checkbox-group") {
-				initial[field.id] = [];
-			} else if (field.type === "checkbox") {
-				initial[field.id] = false;
-			} else if (field.type === "address") {
-				initial[field.id] = {
-					street: "",
-					street2: "",
-					city: "",
-					state: "",
-					zip: "",
-					country: "",
-				};
-			} else {
-				initial[field.id] = "";
-			}
+		previewFields.forEach((field) => {
+			initial[field.id] = getDefaultFieldValue(field);
 		});
-		setFormData(initial as Record<string, unknown>);
+		setFormData(initial);
 		setShowOutput(false);
 	};
 
 	const applyInputSchema = () => {
-		if (!selectedVersion) return;
+		if (previewFields.length === 0) return;
 		try {
 			const schema = JSON.parse(customInputSchema) as Record<string, unknown>;
 			const prefilled = { ...formData };
-			selectedVersion.fields.forEach((field) => {
+			previewFields.forEach((field) => {
 				const schemaKey = field.label.toLowerCase().replace(/\s+/g, "_");
 				if (schema[schemaKey] !== undefined) {
 					prefilled[field.id] = schema[schemaKey];
@@ -179,24 +200,33 @@ export default function FormPreviewPage() {
 	};
 
 	const generateOutputSchema = (): Record<string, unknown> => {
-		if (!selectedVersion) return {};
 		const output: Record<string, unknown> = {};
-		selectedVersion.fields.forEach((field) => {
+		previewFields.forEach((field) => {
 			const schemaKey = field.label.toLowerCase().replace(/\s+/g, "_");
 			output[schemaKey] = formData[field.id];
 		});
 		return output;
 	};
 
-	if (!selectedForm || !selectedVersion) {
+	if (isLoadingForm || !selectedForm) {
 		return (
 			<div className="flex h-screen items-center justify-center">
-				<p className="text-muted-foreground">
-					{t("formEditor.noFormSelected")}
-				</p>
+				<Loader2 className="h-8 w-8 animate-spin text-primary" />
 			</div>
 		);
 	}
+
+	if (previewFields.length === 0) {
+		return (
+			<div className="flex h-screen items-center justify-center">
+				<p className="text-muted-foreground">{t("formDetail.noFieldsYet")}</p>
+			</div>
+		);
+	}
+
+	const displayVersion = selectedVersion
+		? `v${selectedVersion.version}`
+		: t("status.draft");
 
 	return (
 		<div className="flex h-screen flex-col bg-background overflow-hidden">
@@ -207,7 +237,9 @@ export default function FormPreviewPage() {
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={() => router.back()}
+							onClick={() =>
+								router.push(cameFromEditor ? `/${formId}/editor` : `/${formId}`)
+							}
 							className="gap-2"
 						>
 							<ArrowLeft className="h-4 w-4" />
@@ -218,8 +250,8 @@ export default function FormPreviewPage() {
 								{t("preview.title")}
 							</h1>
 							<p className="truncate text-xs text-muted-foreground sm:text-sm">
-								{getFieldLabel(selectedForm.name, selectedForm.nameEs)} - v
-								{selectedVersion.version}
+								{getFieldLabel(selectedForm.name, selectedForm.nameEs)} -{" "}
+								{displayVersion}
 							</p>
 						</div>
 					</div>
@@ -332,7 +364,7 @@ export default function FormPreviewPage() {
 						<div className="space-y-2">
 							<Label className="text-sm">{t("preview.fieldMapping")}</Label>
 							<div className="space-y-1 overflow-x-auto">
-								{selectedVersion.fields.map((field) => (
+								{previewFields.map((field) => (
 									<div
 										key={field.id}
 										className="whitespace-nowrap rounded border bg-background p-2 text-xs"
@@ -403,9 +435,7 @@ export default function FormPreviewPage() {
 											)}
 										</p>
 										<div className="mt-3 flex items-center gap-2">
-											<Badge variant="outline">
-												v{selectedVersion.version}
-											</Badge>
+											<Badge variant="outline">{displayVersion}</Badge>
 											<Badge
 												variant="outline"
 												className={
@@ -422,24 +452,19 @@ export default function FormPreviewPage() {
 									</div>
 
 									<form onSubmit={handleSubmit} className="space-y-6">
-										{selectedVersion.fields.length === 0 ? (
-											<p className="py-8 text-center text-muted-foreground">
-												{t("formDetail.noFieldsYet")}
-											</p>
-										) : (
-											<div className="space-y-6">
-												{selectedVersion.fields.map((field) => (
-													<FormFieldRenderer
-														key={field.id}
-														field={field}
-														value={formData[field.id]}
-														onChange={handleFieldChange}
-													/>
-												))}
-											</div>
-										)}
+										<div className="space-y-6">
+											{previewFields.map((field) => (
+												<FormFieldRenderer
+													key={field.id}
+													field={field}
+													value={formData[field.id]}
+													onChange={handleFieldChange}
+													largeText={largeText}
+												/>
+											))}
+										</div>
 
-										{selectedVersion.fields.length > 0 && (
+										{previewFields.length > 0 && (
 											<div className="flex justify-end gap-3 border-t pt-6">
 												<Button
 													type="button"

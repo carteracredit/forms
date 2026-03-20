@@ -1,11 +1,12 @@
 "use client";
 
 import type React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { FormField, FormFieldType } from "@/lib/types/form";
+import { normalizeFieldsForChecksum } from "@/lib/checksum";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import {
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	DialogFooter,
@@ -66,6 +68,7 @@ import {
 	Pencil,
 	Rocket,
 	RefreshCw,
+	Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -219,13 +222,17 @@ function getFieldPropertyBadges(field: FormField): string[] {
 }
 
 interface FormEditorProps {
-	onBack: () => void;
-	onSave: () => void;
+	formId: string;
 }
 
-export function FormEditor({ onBack, onSave }: FormEditorProps) {
+export function FormEditor({ formId }: FormEditorProps) {
 	const router = useRouter();
-	const { selectedForm, saveFieldsDraft, publishForm } = useFormStore();
+	const { selectedForm, saveFieldsDraft, publishForm, updateEditingFields } =
+		useFormStore();
+	const [isLoadingForm, setIsLoadingForm] = useState(() => {
+		const state = useFormStore.getState();
+		return !(state.isEditing && state.selectedForm?.id === formId);
+	});
 	const { t } = useLanguage();
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [showAddField, setShowAddField] = useState(false);
@@ -283,19 +290,82 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 	// Expanded field for properties/schema view
 	const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
 
-	useEffect(() => {
-		if (selectedForm) {
-			// Initialize from draft fields, not a published version
-			setFields(JSON.parse(JSON.stringify(selectedForm.draftFields)));
-		}
-	}, [selectedForm]);
+	// Unsaved changes confirmation
+	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+	const pendingNavigationRef = useRef<string | null>(null);
 
-	if (!selectedForm) {
+	const savedFieldsRef = useRef<string>("");
+
+	const hasUnsavedChanges = useMemo(
+		() => normalizeFieldsForChecksum(fields) !== savedFieldsRef.current,
+		[fields],
+	);
+
+	const confirmLeave = useCallback(() => {
+		setShowLeaveDialog(false);
+		useFormStore.getState().cancelEditing();
+		if (pendingNavigationRef.current) {
+			router.push(pendingNavigationRef.current);
+			pendingNavigationRef.current = null;
+		}
+	}, [router]);
+
+	const requestLeave = useCallback(
+		(path: string) => {
+			if (hasUnsavedChanges) {
+				pendingNavigationRef.current = path;
+				setShowLeaveDialog(true);
+			} else {
+				useFormStore.getState().cancelEditing();
+				router.push(path);
+			}
+		},
+		[hasUnsavedChanges, router],
+	);
+
+	useEffect(() => {
+		if (!hasUnsavedChanges) return;
+		const handler = (e: BeforeUnloadEvent) => {
+			e.preventDefault();
+		};
+		window.addEventListener("beforeunload", handler);
+		return () => window.removeEventListener("beforeunload", handler);
+	}, [hasUnsavedChanges]);
+
+	useEffect(() => {
+		const load = async () => {
+			const state = useFormStore.getState();
+
+			if (state.isEditing && state.selectedForm?.id === formId) {
+				const restoredFields: FormField[] = JSON.parse(
+					JSON.stringify(state.editingFields),
+				);
+				setFields(restoredFields);
+				savedFieldsRef.current = normalizeFieldsForChecksum(
+					state.selectedForm.draftFields,
+				);
+				setIsLoadingForm(false);
+				return;
+			}
+
+			setIsLoadingForm(true);
+			await useFormStore.getState().refreshForm(formId);
+			useFormStore.getState().setSelectedForm(formId);
+			const form = useFormStore.getState().selectedForm;
+			if (form) {
+				useFormStore.getState().startEditing(form);
+				setFields(JSON.parse(JSON.stringify(form.draftFields)));
+				savedFieldsRef.current = normalizeFieldsForChecksum(form.draftFields);
+			}
+			setIsLoadingForm(false);
+		};
+		load();
+	}, [formId]);
+
+	if (isLoadingForm || !selectedForm) {
 		return (
-			<div className="flex items-center justify-center h-full">
-				<p className="text-muted-foreground">
-					{t("formEditor.noFormSelected")}
-				</p>
+			<div className="flex items-center justify-center h-screen">
+				<Loader2 className="h-8 w-8 animate-spin text-primary" />
 			</div>
 		);
 	}
@@ -497,6 +567,7 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 				return;
 			}
 			await saveFieldsDraft(selectedForm.id, fields);
+			savedFieldsRef.current = normalizeFieldsForChecksum(fields);
 			toast.success(t("formEditor.draftSaved"));
 		} catch {
 			toast.error(t("formEditor.saveDraftError"));
@@ -509,12 +580,12 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 		if (!selectedForm) return;
 		setIsPublishing(true);
 		try {
-			// Save current fields as draft first, then publish
 			await saveFieldsDraft(selectedForm.id, fields);
 			await publishForm(selectedForm.id);
 			toast.success(t("formEditor.published"));
 			setShowPublishDialog(false);
-			onSave();
+			useFormStore.getState().cancelEditing();
+			router.push(`/${formId}`);
 		} catch {
 			toast.error(t("formEditor.publishError"));
 		} finally {
@@ -880,7 +951,7 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={onBack}
+							onClick={() => requestLeave(`/${formId}`)}
 							className="gap-2 px-2 md:px-3"
 						>
 							<ArrowLeft className="h-4 w-4" />
@@ -916,7 +987,10 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						</Button>
 						<Button
 							variant="outline"
-							onClick={() => router.push(`/preview/${selectedForm.id}`)}
+							onClick={() => {
+								updateEditingFields(fields);
+								router.push(`/preview/${selectedForm.id}?from=editor`);
+							}}
 							className="gap-2 flex-1 sm:flex-none"
 							size="sm"
 						>
@@ -1258,6 +1332,32 @@ export function FormEditor({ onBack, onSave }: FormEditorProps) {
 						</Button>
 						<Button onClick={handlePublish} disabled={isPublishing}>
 							{isPublishing ? t("common.loading") : t("formEditor.publish")}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Unsaved Changes Confirmation Dialog */}
+			<Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>{t("formEditor.leaveTitle")}</DialogTitle>
+						<DialogDescription>
+							{t("formEditor.leaveMessage")}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setShowLeaveDialog(false);
+								pendingNavigationRef.current = null;
+							}}
+						>
+							{t("formEditor.leaveCancel")}
+						</Button>
+						<Button variant="destructive" onClick={confirmLeave}>
+							{t("formEditor.leaveConfirm")}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

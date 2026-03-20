@@ -120,8 +120,11 @@ export const useFormStore = create<FormStore>((set, get) => ({
 		try {
 			const form = await getFormAction(formId);
 			const current = get();
+			const existsInStore = current.forms.some((f) => f.id === formId);
 			set({
-				forms: current.forms.map((f) => (f.id === formId ? form : f)),
+				forms: existsInStore
+					? current.forms.map((f) => (f.id === formId ? form : f))
+					: [...current.forms, form],
 				selectedForm:
 					current.selectedForm?.id === formId ? form : current.selectedForm,
 			});

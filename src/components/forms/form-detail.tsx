@@ -22,10 +22,11 @@ import {
 	Archive,
 	Rocket,
 	RefreshCw,
+	Loader2,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -46,15 +47,13 @@ import { EditFormInfoDialog } from "./edit-form-info-dialog";
 import { toast } from "sonner";
 
 interface FormDetailProps {
-	onBack: () => void;
-	onEdit: () => void;
+	formId: string;
 	/** Initial tab to show. Defaults to "details". */
 	initialTab?: "details" | "fieldLibrary";
 }
 
 export function FormDetail({
-	onBack,
-	onEdit,
+	formId,
 	initialTab = "details",
 }: FormDetailProps) {
 	const {
@@ -66,7 +65,18 @@ export function FormDetail({
 	} = useFormStore();
 	const { t, language, getFieldLabel } = useLanguage();
 	const router = useRouter();
+	const [isLoadingForm, setIsLoadingForm] = useState(true);
 	const [showVersions, setShowVersions] = useState(false);
+
+	useEffect(() => {
+		const load = async () => {
+			setIsLoadingForm(true);
+			await useFormStore.getState().refreshForm(formId);
+			useFormStore.getState().setSelectedForm(formId);
+			setIsLoadingForm(false);
+		};
+		load();
+	}, [formId]);
 	const [showInputSchema, setShowInputSchema] = useState(false);
 	const [showOutputSchema, setShowOutputSchema] = useState(true);
 	const [showEditInfoDialog, setShowEditInfoDialog] = useState(false);
@@ -77,12 +87,10 @@ export function FormDetail({
 
 	const dateLocale = language === "es" ? es : enUS;
 
-	if (!selectedForm) {
+	if (isLoadingForm || !selectedForm) {
 		return (
-			<div className="flex items-center justify-center h-full">
-				<p className="text-muted-foreground">
-					{t("formEditor.noFormSelected")}
-				</p>
+			<div className="flex items-center justify-center h-screen">
+				<Loader2 className="h-8 w-8 animate-spin text-primary" />
 			</div>
 		);
 	}
@@ -144,7 +152,12 @@ export function FormDetail({
 			{/* Header */}
 			<div className="border-b bg-background px-6 py-4">
 				<div className="flex items-center gap-4 mb-4">
-					<Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => router.push("/")}
+						className="gap-2"
+					>
 						<ArrowLeft className="h-4 w-4" />
 						{t("common.back")}
 					</Button>
@@ -177,7 +190,11 @@ export function FormDetail({
 						</Button>
 						{selectedForm.status === "draft" && (
 							<>
-								<Button onClick={onEdit} variant="outline" className="gap-2">
+								<Button
+									onClick={() => router.push(`/${formId}/editor`)}
+									variant="outline"
+									className="gap-2"
+								>
 									<Edit className="h-4 w-4" />
 									{t("formDetail.editFields")}
 								</Button>
@@ -198,7 +215,11 @@ export function FormDetail({
 						)}
 						{selectedForm.status === "published" && (
 							<>
-								<Button onClick={onEdit} variant="outline" className="gap-2">
+								<Button
+									onClick={() => router.push(`/${formId}/editor`)}
+									variant="outline"
+									className="gap-2"
+								>
 									<Edit className="h-4 w-4" />
 									{t("formDetail.editFields")}
 								</Button>
@@ -262,7 +283,7 @@ export function FormDetail({
 										</p>
 										{selectedForm.status !== "archived" && (
 											<Button
-												onClick={onEdit}
+												onClick={() => router.push(`/${formId}/editor`)}
 												variant="outline"
 												className="gap-2"
 											>

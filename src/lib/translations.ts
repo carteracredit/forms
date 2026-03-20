@@ -211,6 +211,11 @@ export const translations = {
 			noFormSelected: "No form selected",
 			livePreview: "Live Preview",
 			duplicateFieldLabel: "A field with this label already exists in the form",
+			leaveTitle: "Unsaved Changes",
+			leaveMessage:
+				"You have unsaved changes. If you leave, your changes will be lost.",
+			leaveConfirm: "Leave Without Saving",
+			leaveCancel: "Stay",
 		},
 
 		// Field Types
@@ -768,6 +773,11 @@ export const translations = {
 			livePreview: "Vista Previa en Vivo",
 			duplicateFieldLabel:
 				"Ya existe un campo con esta etiqueta en el formulario",
+			leaveTitle: "Cambios sin guardar",
+			leaveMessage:
+				"Tienes cambios sin guardar. Si sales, tus cambios se perderán.",
+			leaveConfirm: "Salir sin guardar",
+			leaveCancel: "Quedarse",
 		},
 
 		// Field Types
