@@ -1,3 +1,11 @@
+# [1.0.0-rc.13](https://github.com/carteracredit/forms/compare/v1.0.0-rc.12...v1.0.0-rc.13) (2026-03-20)
+
+
+### Features
+
+* add form detail and editor pages with session handling ([abcf4c7](https://github.com/carteracredit/forms/commit/abcf4c7d9b9f7c0bbdff022f63a264dd6dbd6147))
+* implement unsaved changes confirmation in FormEditor ([288a270](https://github.com/carteracredit/forms/commit/288a2708607cff340c853cc7301952da1332486d))
+
 # [1.0.0-rc.12](https://github.com/carteracredit/forms/compare/v1.0.0-rc.11...v1.0.0-rc.12) (2026-03-20)
 
 
