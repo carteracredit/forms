@@ -1,3 +1,10 @@
+# [1.0.0-rc.12](https://github.com/carteracredit/forms/compare/v1.0.0-rc.11...v1.0.0-rc.12) (2026-03-20)
+
+
+### Features
+
+* optimize JWT retrieval by caching ([8724412](https://github.com/carteracredit/forms/commit/872441227cbeb3f73915bbaf3ac8606387101d8a))
+
 # [1.0.0-rc.11](https://github.com/carteracredit/forms/compare/v1.0.0-rc.10...v1.0.0-rc.11) (2026-03-16)
 
 
