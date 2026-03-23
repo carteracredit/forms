@@ -2,6 +2,16 @@ import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render, fireEvent, cleanup } from "@testing-library/react";
 import { FormsList } from "./forms-list";
 
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({
+		push: vi.fn(),
+		replace: vi.fn(),
+		refresh: vi.fn(),
+	}),
+	usePathname: () => "/",
+	useSearchParams: () => new URLSearchParams(),
+}));
+
 // Mock LanguageProvider
 vi.mock("@/components/LanguageProvider", () => ({
 	useLanguage: () => ({
@@ -11,6 +21,7 @@ vi.mock("@/components/LanguageProvider", () => ({
 }));
 
 const mockDeleteForm = vi.fn();
+const mockCloneForm = vi.fn();
 
 const mockForms = [
 	{
@@ -47,6 +58,7 @@ vi.mock("@/lib/form-store", () => ({
 			return storeForms;
 		},
 		deleteForm: mockDeleteForm,
+		cloneForm: mockCloneForm,
 		get isLoading() {
 			return storeIsLoading;
 		},

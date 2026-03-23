@@ -91,6 +91,9 @@ export const translations = {
 			updated: "Updated",
 			viewDetails: "View Details",
 			editForm: "Edit Form",
+			cloneForm: "Clone",
+			cloneSuccess: 'Copy of "{name}" created',
+			cloneError: "Error cloning form",
 			deleteConfirm: "Are you sure you want to delete this form?",
 			statsTotal: "Total",
 			statsPublished: "Published",
@@ -161,6 +164,9 @@ export const translations = {
 				"No published versions yet. Publish this form to create version 1.",
 			fields: "fields",
 			field: "field",
+			selectVersion: "Select version",
+			viewingOlderVersion:
+				"Viewing version {v} — this is a historical snapshot",
 		},
 
 		// Form Editor
@@ -216,6 +222,7 @@ export const translations = {
 				"You have unsaved changes. If you leave, your changes will be lost.",
 			leaveConfirm: "Leave Without Saving",
 			leaveCancel: "Stay",
+			saveAndLeave: "Save & Leave",
 		},
 
 		// Field Types
@@ -564,7 +571,10 @@ export const translations = {
 		forbiddenTitle: "Access Denied",
 		forbiddenMessage:
 			"You do not have permission to access this forms dashboard.",
+		forbiddenDescription:
+			"This area is restricted to administrator users only. If you think you should have access, please contact your system administrator.",
 		forbiddenBack: "Back to home",
+		forbiddenLogout: "Log Out",
 	},
 	es: {
 		// Common
@@ -649,6 +659,9 @@ export const translations = {
 			updated: "Actualizado",
 			viewDetails: "Ver Detalles",
 			editForm: "Editar Formulario",
+			cloneForm: "Clonar",
+			cloneSuccess: 'Copia de "{name}" creada',
+			cloneError: "Error al clonar el formulario",
 			deleteConfirm: "¿Está seguro de que desea eliminar este formulario?",
 			statsTotal: "Total",
 			statsPublished: "Publicados",
@@ -722,6 +735,9 @@ export const translations = {
 				"Aún no hay versiones publicadas. Publica este formulario para crear la versión 1.",
 			fields: "campos",
 			field: "campo",
+			selectVersion: "Seleccionar versión",
+			viewingOlderVersion:
+				"Viendo versión {v} — esta es una instantánea histórica",
 		},
 
 		// Form Editor
@@ -778,6 +794,7 @@ export const translations = {
 				"Tienes cambios sin guardar. Si sales, tus cambios se perderán.",
 			leaveConfirm: "Salir sin guardar",
 			leaveCancel: "Quedarse",
+			saveAndLeave: "Guardar y salir",
 		},
 
 		// Field Types
@@ -1137,7 +1154,10 @@ export const translations = {
 		forbiddenTitle: "Acceso Denegado",
 		forbiddenMessage:
 			"No tienes permisos para acceder a este panel de formularios.",
+		forbiddenDescription:
+			"Esta área está restringida únicamente a usuarios con rol de administrador. Si crees que deberías tener acceso, contacta al administrador del sistema.",
 		forbiddenBack: "Volver al inicio",
+		forbiddenLogout: "Cerrar sesión",
 	},
 } as const;
 

@@ -11,6 +11,7 @@ import {
 	publishFormAction,
 	archiveFormAction,
 	saveFieldsDraftAction,
+	cloneFormAction,
 } from "./api/forms-actions";
 import type { ListFormsOptions } from "./api/forms";
 
@@ -67,6 +68,9 @@ interface FormStore {
 	publishForm: (formId: string, options?: { jwt?: string }) => Promise<void>;
 	/** Archive a form */
 	archiveForm: (formId: string, options?: { jwt?: string }) => Promise<void>;
+
+	/** Clone a form — creates a draft copy with all draft fields */
+	cloneForm: (formId: string) => Promise<Form>;
 
 	// Editing actions
 	/** Start editing a form */
@@ -263,6 +267,19 @@ export const useFormStore = create<FormStore>((set, get) => ({
 		} catch (err) {
 			const message =
 				err instanceof Error ? err.message : "Failed to archive form";
+			set({ error: message });
+			throw err;
+		}
+	},
+
+	cloneForm: async (formId) => {
+		try {
+			const clonedForm = await cloneFormAction(formId);
+			set({ forms: [clonedForm, ...get().forms] });
+			return clonedForm;
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "Failed to clone form";
 			set({ error: message });
 			throw err;
 		}

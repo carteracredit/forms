@@ -64,7 +64,8 @@ describe("SessionControls", () => {
 
 	it("should show theme icon button with aria-label", () => {
 		const { container } = render(<SessionControls />);
-		const themeButton = container.querySelector('[aria-label="Theme"]');
+		// t() mock returns the key, so aria-label becomes "themeToggle"
+		const themeButton = container.querySelector('[aria-label="themeToggle"]');
 		expect(themeButton).toBeInTheDocument();
 	});
 

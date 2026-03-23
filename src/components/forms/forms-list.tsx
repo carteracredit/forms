@@ -29,6 +29,8 @@ import {
 	FileEdit,
 	Archive,
 	Plus,
+	Copy,
+	Loader2,
 } from "lucide-react";
 import {
 	DropdownMenu,
@@ -39,6 +41,8 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import type { Form } from "@/lib/types/form";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface FormsListProps {
 	onViewForm: (formId: string) => void;
@@ -69,18 +73,23 @@ function FormCardRow({
 	form,
 	onView,
 	onEdit,
+	onClone,
 	onDelete,
+	cloningId,
 	t,
 	language,
 }: {
 	form: Form;
 	onView: (id: string) => void;
 	onEdit: (id: string) => void;
+	onClone: (form: Form) => void;
 	onDelete: (id: string) => void;
+	cloningId: string | null;
 	t: (key: string) => string;
 	language: string;
 }) {
 	const dateLocale = language === "es" ? es : enUS;
+	const isBusy = cloningId === form.id;
 	return (
 		<div
 			className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-accent/50 transition-colors"
@@ -104,9 +113,17 @@ function FormCardRow({
 					v{form.currentVersion}
 				</span>
 				<DropdownMenu>
-					<DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+					<DropdownMenuTrigger
+						asChild
+						onClick={(e) => e.stopPropagation()}
+						disabled={isBusy}
+					>
 						<Button variant="ghost" size="icon" className="h-8 w-8">
-							<MoreVertical className="h-4 w-4" />
+							{isBusy ? (
+								<Loader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<MoreVertical className="h-4 w-4" />
+							)}
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
@@ -127,6 +144,15 @@ function FormCardRow({
 						>
 							<Edit className="h-4 w-4 mr-2" />
 							{t("formsList.editForm")}
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={(e) => {
+								e.stopPropagation();
+								onClone(form);
+							}}
+						>
+							<Copy className="h-4 w-4 mr-2" />
+							{t("formsList.cloneForm")}
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							onClick={(e) => {
@@ -190,10 +216,12 @@ export function FormsList({
 	onEditForm,
 	onCreateForm,
 }: FormsListProps) {
-	const { forms, deleteForm, isLoading } = useFormStore();
+	const { forms, deleteForm, cloneForm, isLoading } = useFormStore();
 	const { t, language } = useLanguage();
+	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+	const [cloningId, setCloningId] = useState<string | null>(null);
 
 	const dateLocale = language === "es" ? es : enUS;
 
@@ -216,6 +244,19 @@ export function FormsList({
 	const handleDelete = (formId: string) => {
 		if (confirm(t("formsList.deleteConfirm"))) {
 			deleteForm(formId);
+		}
+	};
+
+	const handleClone = async (form: Form) => {
+		setCloningId(form.id);
+		try {
+			const cloned = await cloneForm(form.id);
+			toast.success(t("formsList.cloneSuccess").replace("{name}", form.name));
+			router.push(`/${cloned.id}`);
+		} catch {
+			toast.error(t("formsList.cloneError"));
+		} finally {
+			setCloningId(null);
 		}
 	};
 
@@ -353,7 +394,9 @@ export function FormsList({
 									form={form}
 									onView={onViewForm}
 									onEdit={onEditForm}
+									onClone={handleClone}
 									onDelete={handleDelete}
+									cloningId={cloningId}
 									t={t}
 									language={language}
 								/>
@@ -430,8 +473,13 @@ export function FormsList({
 															variant="ghost"
 															size="icon"
 															className="h-8 w-8"
+															disabled={cloningId === form.id}
 														>
-															<MoreVertical className="h-4 w-4" />
+															{cloningId === form.id ? (
+																<Loader2 className="h-4 w-4 animate-spin" />
+															) : (
+																<MoreVertical className="h-4 w-4" />
+															)}
 														</Button>
 													</DropdownMenuTrigger>
 													<DropdownMenuContent align="end">
@@ -446,6 +494,10 @@ export function FormsList({
 														>
 															<Edit className="mr-2 h-4 w-4" />
 															{t("formsList.editForm")}
+														</DropdownMenuItem>
+														<DropdownMenuItem onClick={() => handleClone(form)}>
+															<Copy className="mr-2 h-4 w-4" />
+															{t("formsList.cloneForm")}
 														</DropdownMenuItem>
 														<DropdownMenuItem
 															onClick={() => handleDelete(form.id)}

@@ -310,3 +310,20 @@ export async function saveFieldsDraft(
 	);
 	return apiFormToForm(json.result);
 }
+
+/**
+ * POST /forms/:id/clone
+ * Creates a draft copy of an existing form with all its draft fields.
+ * The clone starts as a fresh draft (current_version = 0, no published versions).
+ */
+export async function cloneForm(
+	formId: string,
+	options?: FormsApiOptions,
+): Promise<Form> {
+	const baseUrl = getWorkflowServiceUrl();
+	const { json } = await fetchJson<ApiResponse<ApiForm>>(
+		`${baseUrl}/forms/${formId}/clone`,
+		{ method: "POST", jwt: options?.jwt },
+	);
+	return apiFormToForm(json.result);
+}

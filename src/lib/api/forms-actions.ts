@@ -11,6 +11,7 @@ import {
 	archiveForm,
 	listFormVersions,
 	saveFieldsDraft,
+	cloneForm,
 } from "./forms";
 import type {
 	CreateFormPayload,
@@ -101,4 +102,11 @@ export async function listFormVersionsAction(
 	formId: string,
 ): Promise<FormVersion[]> {
 	return withJwt((jwt) => listFormVersions(formId, { jwt }));
+}
+
+/**
+ * Server action: clone a form — creates a draft copy with all draft fields.
+ */
+export async function cloneFormAction(formId: string): Promise<Form> {
+	return withJwt((jwt) => cloneForm(formId, { jwt }));
 }
