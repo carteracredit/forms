@@ -1,3 +1,11 @@
+# [1.0.0-rc.14](https://github.com/carteracredit/forms/compare/v1.0.0-rc.13...v1.0.0-rc.14) (2026-03-23)
+
+
+### Features
+
+* add cloneForm functionality with comprehensive tests ([3e5a239](https://github.com/carteracredit/forms/commit/3e5a239e6e0712ec0c41462eccd69dda11d8c802))
+* add form cloning functionality and enhance translations ([99f937d](https://github.com/carteracredit/forms/commit/99f937d47ca9c0a176e242ec834e5b761c525e14))
+
 # [1.0.0-rc.13](https://github.com/carteracredit/forms/compare/v1.0.0-rc.12...v1.0.0-rc.13) (2026-03-20)
 
 
