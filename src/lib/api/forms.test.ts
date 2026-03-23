@@ -7,6 +7,7 @@ import {
 	deleteForm,
 	publishForm,
 	archiveForm,
+	cloneForm,
 	listFormVersions,
 	saveFieldsDraft,
 	apiFormToForm,
@@ -292,6 +293,46 @@ describe("forms API client", () => {
 				expect.objectContaining({ method: "POST" }),
 			);
 			expect(form.status).toBe("archived");
+		});
+	});
+
+	describe("cloneForm", () => {
+		it("should call POST /forms/:id/clone and return the cloned form", async () => {
+			const apiForm = makeApiForm({
+				id: "form-clone-1",
+				name: "Copy of Test Form",
+				status: "draft",
+				current_version: 0,
+			});
+			vi.mocked(fetchJson).mockResolvedValue({
+				status: 201,
+				json: { success: true, result: apiForm },
+			});
+
+			const form = await cloneForm("form-1");
+
+			expect(fetchJson).toHaveBeenCalledWith(
+				"https://workflow-svc.test/forms/form-1/clone",
+				expect.objectContaining({ method: "POST" }),
+			);
+			expect(form.id).toBe("form-clone-1");
+			expect(form.name).toBe("Copy of Test Form");
+			expect(form.status).toBe("draft");
+			expect(form.currentVersion).toBe(0);
+		});
+
+		it("should pass jwt option", async () => {
+			const apiForm = makeApiForm({ name: "Copy of Test Form" });
+			vi.mocked(fetchJson).mockResolvedValue({
+				status: 201,
+				json: { success: true, result: apiForm },
+			});
+
+			await cloneForm("form-1", { jwt: "test-jwt" });
+
+			expect(vi.mocked(fetchJson).mock.calls[0][1]).toEqual(
+				expect.objectContaining({ jwt: "test-jwt" }),
+			);
 		});
 	});
 
