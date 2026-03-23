@@ -14,6 +14,7 @@ vi.mock("./api/forms-actions", () => ({
 	deleteFormAction: vi.fn(),
 	publishFormAction: vi.fn(),
 	archiveFormAction: vi.fn(),
+	cloneFormAction: vi.fn(),
 	saveFieldsDraftAction: vi.fn(),
 	listFormVersionsAction: vi.fn(),
 }));
@@ -432,6 +433,45 @@ describe("useFormStore", () => {
 			);
 
 			expect(useFormStore.getState().error).toBe("Failed to archive form");
+		});
+	});
+
+	describe("cloneForm", () => {
+		it("should prepend the cloned form to the list", async () => {
+			const existing = makeForm({ id: "existing" });
+			const cloned = makeForm({ id: "cloned", name: "Copy of Test Form" });
+			useFormStore.setState({ forms: [existing] });
+			vi.mocked(formsActions.cloneFormAction).mockResolvedValue(cloned);
+
+			const result = await useFormStore.getState().cloneForm("existing");
+
+			const state = useFormStore.getState();
+			expect(state.forms).toHaveLength(2);
+			expect(state.forms[0].id).toBe("cloned");
+			expect(state.forms[1].id).toBe("existing");
+			expect(result.id).toBe("cloned");
+		});
+
+		it("should throw and set error on failure", async () => {
+			vi.mocked(formsActions.cloneFormAction).mockRejectedValue(
+				new Error("Clone failed"),
+			);
+
+			await expect(useFormStore.getState().cloneForm("form-1")).rejects.toThrow(
+				"Clone failed",
+			);
+
+			expect(useFormStore.getState().error).toBe("Clone failed");
+		});
+
+		it("should use generic message for non-Error failures", async () => {
+			vi.mocked(formsActions.cloneFormAction).mockRejectedValue("string error");
+
+			await expect(useFormStore.getState().cloneForm("form-1")).rejects.toBe(
+				"string error",
+			);
+
+			expect(useFormStore.getState().error).toBe("Failed to clone form");
 		});
 	});
 

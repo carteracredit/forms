@@ -72,30 +72,36 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const fieldTypes: {
+function getFieldTypes(t: (key: string) => string): {
 	value: FormFieldType;
 	label: string;
 	icon: React.ComponentType<{ className?: string }>;
-}[] = [
-	{ value: "name", label: "Name Field", icon: User },
-	{ value: "phone", label: "Phone Number", icon: Phone },
-	{ value: "email", label: "Email Address", icon: Mail },
-	{ value: "text", label: "Text Field", icon: FileText },
-	{ value: "textarea", label: "Long Text", icon: AlignLeft },
-	{ value: "number", label: "Number", icon: Hash },
-	{ value: "url", label: "URL", icon: Link },
-	{ value: "password", label: "Password", icon: Lock },
-	{ value: "dropdown", label: "Dropdown", icon: ChevronDown },
-	{ value: "date", label: "Date", icon: Calendar },
-	{ value: "time", label: "Time", icon: Clock },
-	{ value: "datetime", label: "Date & Time", icon: Clock },
-	{ value: "rating", label: "Rating", icon: Star },
-	{ value: "address", label: "Address Field", icon: MapPin },
-	{ value: "file", label: "File Upload", icon: Upload },
-	{ value: "checkbox", label: "Checkbox", icon: CheckSquare },
-	{ value: "radio", label: "Radio Buttons", icon: Circle },
-	{ value: "checkbox-group", label: "Checkbox Group", icon: ListChecks },
-];
+}[] {
+	return [
+		{ value: "name", label: t("fieldTypes.name"), icon: User },
+		{ value: "phone", label: t("fieldTypes.phone"), icon: Phone },
+		{ value: "email", label: t("fieldTypes.email"), icon: Mail },
+		{ value: "text", label: t("fieldTypes.text"), icon: FileText },
+		{ value: "textarea", label: t("fieldTypes.textarea"), icon: AlignLeft },
+		{ value: "number", label: t("fieldTypes.number"), icon: Hash },
+		{ value: "url", label: t("fieldTypes.url"), icon: Link },
+		{ value: "password", label: t("fieldTypes.password"), icon: Lock },
+		{ value: "dropdown", label: t("fieldTypes.dropdown"), icon: ChevronDown },
+		{ value: "date", label: t("fieldTypes.date"), icon: Calendar },
+		{ value: "time", label: t("fieldTypes.time"), icon: Clock },
+		{ value: "datetime", label: t("fieldTypes.datetime"), icon: Clock },
+		{ value: "rating", label: t("fieldTypes.rating"), icon: Star },
+		{ value: "address", label: t("fieldTypes.address"), icon: MapPin },
+		{ value: "file", label: t("fieldTypes.file"), icon: Upload },
+		{ value: "checkbox", label: t("fieldTypes.checkbox"), icon: CheckSquare },
+		{ value: "radio", label: t("fieldTypes.radio"), icon: Circle },
+		{
+			value: "checkbox-group",
+			label: t("fieldTypes.checkbox-group"),
+			icon: ListChecks,
+		},
+	];
+}
 
 /** Returns example input/output schema for a field (for preview only). */
 function getFieldSchemaPreview(field: FormField): {
@@ -234,6 +240,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 		return !(state.isEditing && state.selectedForm?.id === formId);
 	});
 	const { t } = useLanguage();
+	const fieldTypes = getFieldTypes(t);
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [showAddField, setShowAddField] = useState(false);
 	const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -292,6 +299,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 
 	// Unsaved changes confirmation
 	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+	const [isSavingAndLeaving, setIsSavingAndLeaving] = useState(false);
 	const pendingNavigationRef = useRef<string | null>(null);
 
 	const savedFieldsRef = useRef<string>("");
@@ -309,6 +317,25 @@ export function FormEditor({ formId }: FormEditorProps) {
 			pendingNavigationRef.current = null;
 		}
 	}, [router]);
+
+	const handleSaveAndLeave = useCallback(async () => {
+		if (!selectedForm) return;
+		setIsSavingAndLeaving(true);
+		try {
+			await saveFieldsDraft(selectedForm.id, fields);
+			savedFieldsRef.current = normalizeFieldsForChecksum(fields);
+			setShowLeaveDialog(false);
+			useFormStore.getState().cancelEditing();
+			if (pendingNavigationRef.current) {
+				router.push(pendingNavigationRef.current);
+				pendingNavigationRef.current = null;
+			}
+		} catch {
+			toast.error(t("formEditor.saveDraftError"));
+		} finally {
+			setIsSavingAndLeaving(false);
+		}
+	}, [selectedForm, fields, saveFieldsDraft, router, t]);
 
 	const requestLeave = useCallback(
 		(path: string) => {
@@ -1353,10 +1380,20 @@ export function FormEditor({ formId }: FormEditorProps) {
 								setShowLeaveDialog(false);
 								pendingNavigationRef.current = null;
 							}}
+							disabled={isSavingAndLeaving}
 						>
 							{t("formEditor.leaveCancel")}
 						</Button>
-						<Button variant="destructive" onClick={confirmLeave}>
+						<Button onClick={handleSaveAndLeave} disabled={isSavingAndLeaving}>
+							{isSavingAndLeaving
+								? t("common.loading")
+								: t("formEditor.saveAndLeave")}
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={confirmLeave}
+							disabled={isSavingAndLeaving}
+						>
 							{t("formEditor.leaveConfirm")}
 						</Button>
 					</DialogFooter>

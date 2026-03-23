@@ -23,6 +23,7 @@ import {
 	Rocket,
 	RefreshCw,
 	Loader2,
+	AlertCircle,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -41,6 +42,13 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { FieldShowcase } from "./field-showcase";
 import { SessionControls } from "@/components/SessionControls";
 import { EditFormInfoDialog } from "./edit-form-info-dialog";
@@ -139,13 +147,21 @@ export function FormDetail({
 	};
 
 	// Working draft fields (what the user is editing)
-	const displayFields = selectedForm.draftFields;
-
-	// Latest published version for schema display
-	const latestPublishedVersion =
+	// When a historical version is selected, show that version's fields
+	const latestVersion =
 		selectedForm.versions.length > 0
 			? selectedForm.versions.reduce((a, b) => (a.version > b.version ? a : b))
 			: null;
+	const isViewingOlderVersion =
+		selectedVersion !== null &&
+		latestVersion !== null &&
+		selectedVersion.id !== latestVersion.id;
+	const displayFields = isViewingOlderVersion
+		? selectedVersion!.fields
+		: selectedForm.draftFields;
+
+	// Version used for schema display (selected version or latest)
+	const latestPublishedVersion = selectedVersion ?? latestVersion;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -244,10 +260,43 @@ export function FormDetail({
 					>
 						{t(`status.${selectedForm.status}`)}
 					</Badge>
-					{selectedForm.currentVersion > 0 && (
-						<Badge variant="outline">
-							{t("common.version")} {selectedForm.currentVersion}
-						</Badge>
+					{selectedForm.currentVersion > 0 &&
+						(selectedForm.versions.length > 1 && selectedVersion ? (
+							<Select
+								value={selectedVersion.id}
+								onValueChange={(versionId) => setSelectedVersion(versionId)}
+							>
+								<SelectTrigger className="h-7 w-auto min-w-[120px] text-xs">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{[...selectedForm.versions]
+										.sort((a, b) => b.version - a.version)
+										.map((v) => (
+											<SelectItem key={v.id} value={v.id} className="text-xs">
+												{t("common.version")} {v.version}
+												{v.version === selectedForm.currentVersion
+													? ` (${t("common.current")})`
+													: ""}
+											</SelectItem>
+										))}
+								</SelectContent>
+							</Select>
+						) : (
+							<Badge variant="outline">
+								{t("common.version")} {selectedForm.currentVersion}
+							</Badge>
+						))}
+					{isViewingOlderVersion && selectedVersion && (
+						<div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+							<AlertCircle className="h-3.5 w-3.5" />
+							<span>
+								{t("formDetail.viewingOlderVersion").replace(
+									"{v}",
+									String(selectedVersion.version),
+								)}
+							</span>
+						</div>
 					)}
 					{selectedForm.tags.length > 0 && (
 						<span className="text-sm text-muted-foreground">

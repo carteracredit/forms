@@ -69,18 +69,22 @@ function CompactLanguageSwitcher() {
 // Compact theme picker
 // ---------------------------------------------------------------------------
 
-const THEMES = [
-	{ value: "light", icon: Sun, label: "Light" },
-	{ value: "dark", icon: Moon, label: "Dark" },
-	{ value: "system", icon: Monitor, label: "System" },
-] as const;
+const THEME_VALUES = ["light", "dark", "system"] as const;
+type ThemeValue = (typeof THEME_VALUES)[number];
+
+const THEME_ICONS: Record<ThemeValue, typeof Sun> = {
+	light: Sun,
+	dark: Moon,
+	system: Monitor,
+};
 
 function CompactThemeSwitcher() {
 	const { theme, setTheme } = useTheme();
-	const current =
-		THEMES.find((t) => t.value === theme) ??
-		THEMES.find((t) => t.value === "system")!;
-	const CurrentIcon = current.icon;
+	const { t } = useLanguage();
+	const currentTheme = (
+		THEME_VALUES.includes(theme as ThemeValue) ? theme : "system"
+	) as ThemeValue;
+	const CurrentIcon = THEME_ICONS[currentTheme];
 
 	return (
 		<DropdownMenu>
@@ -89,25 +93,30 @@ function CompactThemeSwitcher() {
 					variant="ghost"
 					size="sm"
 					className="h-8 w-8 rounded-md p-0 text-muted-foreground hover:text-foreground"
-					aria-label="Theme"
+					aria-label={t("themeToggle")}
 				>
 					<CurrentIcon className="h-4 w-4" />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-36">
-				{THEMES.map(({ value, icon: Icon, label }) => (
-					<DropdownMenuItem
-						key={value}
-						onClick={() => setTheme(value)}
-						className="flex items-center justify-between gap-2"
-					>
-						<div className="flex items-center gap-2">
-							<Icon className="h-3.5 w-3.5 text-muted-foreground" />
-							<span>{label}</span>
-						</div>
-						{theme === value && <Check className="h-3.5 w-3.5 text-primary" />}
-					</DropdownMenuItem>
-				))}
+				{THEME_VALUES.map((value) => {
+					const Icon = THEME_ICONS[value];
+					return (
+						<DropdownMenuItem
+							key={value}
+							onClick={() => setTheme(value)}
+							className="flex items-center justify-between gap-2"
+						>
+							<div className="flex items-center gap-2">
+								<Icon className="h-3.5 w-3.5 text-muted-foreground" />
+								<span>{t(`theme.${value}`)}</span>
+							</div>
+							{theme === value && (
+								<Check className="h-3.5 w-3.5 text-primary" />
+							)}
+						</DropdownMenuItem>
+					);
+				})}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
