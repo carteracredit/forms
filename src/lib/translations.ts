@@ -433,8 +433,10 @@ export const translations = {
 			subtitle: "Start building a new form for your workflow",
 			formName: "Form Name",
 			formNamePlaceholder: "e.g. Customer Feedback Form",
+			formNameEsPlaceholder: "Spanish name (optional)",
 			descriptionLabel: "Description",
 			descriptionPlaceholder: "Describe the purpose of this form...",
+			descriptionEsPlaceholder: "Spanish description (optional)",
 			duplicateName: "A form with this name already exists",
 		},
 
@@ -1014,8 +1016,10 @@ export const translations = {
 				"Comienza a construir un nuevo formulario para tu flujo de trabajo",
 			formName: "Nombre del Formulario",
 			formNamePlaceholder: "ej. Formulario de Comentarios del Cliente",
+			formNameEsPlaceholder: "Nombre en español (opcional)",
 			descriptionLabel: "Descripción",
 			descriptionPlaceholder: "Describe el propósito de este formulario...",
+			descriptionEsPlaceholder: "Descripción en español (opcional)",
 			duplicateName: "Ya existe un formulario con este nombre",
 		},
 

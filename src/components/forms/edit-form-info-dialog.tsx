@@ -32,14 +32,17 @@ export function EditFormInfoDialog({
 	const [isSaving, setIsSaving] = useState(false);
 
 	const [name, setName] = useState("");
+	const [nameEs, setNameEs] = useState("");
 	const [description, setDescription] = useState("");
+	const [descriptionEs, setDescriptionEs] = useState("");
 	const [tags, setTags] = useState("");
 
-	// Sync with selected form when dialog opens
 	useEffect(() => {
 		if (open && selectedForm) {
 			setName(selectedForm.name);
+			setNameEs(selectedForm.nameEs ?? "");
 			setDescription(selectedForm.description ?? "");
+			setDescriptionEs(selectedForm.descriptionEs ?? "");
 			setTags(selectedForm.tags.join(", "));
 		}
 	}, [open, selectedForm]);
@@ -57,7 +60,9 @@ export function EditFormInfoDialog({
 
 	const hasChanges =
 		name.trim() !== selectedForm.name ||
+		(nameEs.trim() || "") !== (selectedForm.nameEs ?? "") ||
 		description.trim() !== (selectedForm.description ?? "") ||
+		(descriptionEs.trim() || "") !== (selectedForm.descriptionEs ?? "") ||
 		tags.trim() !== selectedForm.tags.join(", ");
 
 	const handleSave = async () => {
@@ -66,7 +71,9 @@ export function EditFormInfoDialog({
 		try {
 			await updateForm(selectedForm.id, {
 				name: name.trim(),
+				nameEs: nameEs.trim() || undefined,
 				description: description.trim() || undefined,
+				descriptionEs: descriptionEs.trim() || undefined,
 				tags: tags
 					.split(",")
 					.map((t) => t.trim())
@@ -91,14 +98,33 @@ export function EditFormInfoDialog({
 
 				<div className="space-y-4 py-2">
 					<div>
-						<Label htmlFor="edit-form-name">{t("createForm.formName")}</Label>
-						<Input
-							id="edit-form-name"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							placeholder={t("createForm.formNamePlaceholder")}
-							className={`mt-1 ${isDuplicateName ? "border-destructive" : ""}`}
-						/>
+						<Label htmlFor="edit-form-name">
+							{t("createForm.formName")}
+							<span className="ml-1 text-destructive">*</span>
+						</Label>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+							<Input
+								id="edit-form-name"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								placeholder={t("createForm.formNamePlaceholder")}
+								className={isDuplicateName ? "border-destructive" : ""}
+							/>
+							<Input
+								id="edit-form-name-es"
+								value={nameEs}
+								onChange={(e) => setNameEs(e.target.value)}
+								placeholder={t("createForm.formNameEsPlaceholder")}
+							/>
+						</div>
+						<div className="hidden sm:grid grid-cols-2 gap-2">
+							<span className="text-[10px] text-muted-foreground">
+								{t("formEditor.english")}
+							</span>
+							<span className="text-[10px] text-muted-foreground">
+								{t("formEditor.spanish")}
+							</span>
+						</div>
 						{isDuplicateName && (
 							<p className="text-sm text-destructive mt-1">
 								{t("createForm.duplicateName")}
@@ -110,14 +136,30 @@ export function EditFormInfoDialog({
 						<Label htmlFor="edit-form-description">
 							{t("createForm.descriptionLabel")}
 						</Label>
-						<Textarea
-							id="edit-form-description"
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							placeholder={t("createForm.descriptionPlaceholder")}
-							className="mt-1"
-							rows={3}
-						/>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+							<Textarea
+								id="edit-form-description"
+								value={description}
+								onChange={(e) => setDescription(e.target.value)}
+								placeholder={t("createForm.descriptionPlaceholder")}
+								rows={3}
+							/>
+							<Textarea
+								id="edit-form-description-es"
+								value={descriptionEs}
+								onChange={(e) => setDescriptionEs(e.target.value)}
+								placeholder={t("createForm.descriptionEsPlaceholder")}
+								rows={3}
+							/>
+						</div>
+						<div className="hidden sm:grid grid-cols-2 gap-2">
+							<span className="text-[10px] text-muted-foreground">
+								{t("formEditor.english")}
+							</span>
+							<span className="text-[10px] text-muted-foreground">
+								{t("formEditor.spanish")}
+							</span>
+						</div>
 					</div>
 
 					<div>

@@ -90,12 +90,19 @@ vi.mock("@/components/forms/create-form-dialog", () => ({
 	}: {
 		open: boolean;
 		onOpenChange: (open: boolean) => void;
-		onCreateForm: (name: string, description: string) => void;
+		onCreateForm: (payload: {
+			name: string;
+			nameEs?: string;
+			description?: string;
+			descriptionEs?: string;
+		}) => void;
 	}) =>
 		open ? (
 			<div data-testid="create-dialog">
 				<button
-					onClick={() => onCreateForm("New Form", "Description")}
+					onClick={() =>
+						onCreateForm({ name: "New Form", description: "Description" })
+					}
 					data-testid="create-btn"
 				>
 					Create

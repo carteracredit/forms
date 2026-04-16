@@ -12,11 +12,11 @@ vi.mock("next/navigation", () => ({
 	useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock LanguageProvider
 vi.mock("@/components/LanguageProvider", () => ({
 	useLanguage: () => ({
 		t: (key: string) => key,
 		language: "en",
+		getFieldLabel: (en: string) => en,
 	}),
 }));
 

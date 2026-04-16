@@ -239,7 +239,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 		const state = useFormStore.getState();
 		return !(state.isEditing && state.selectedForm?.id === formId);
 	});
-	const { t } = useLanguage();
+	const { t, getFieldLabel } = useLanguage();
 	const fieldTypes = getFieldTypes(t);
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [showAddField, setShowAddField] = useState(false);
@@ -990,7 +990,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 								{t("formEditor.editFields")}
 							</h1>
 							<p className="text-xs md:text-sm text-muted-foreground truncate">
-								{selectedForm.name}
+								{getFieldLabel(selectedForm.name, selectedForm.nameEs)}
 							</p>
 						</div>
 					</div>
