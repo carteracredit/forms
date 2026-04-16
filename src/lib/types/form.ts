@@ -48,6 +48,8 @@ export interface FormField {
 	required: boolean;
 	/** Options for select/radio/checkbox-group fields */
 	options?: string[];
+	/** Spanish labels for options (optional, parallel array to `options`) */
+	optionsEs?: string[];
 	/** Validation rules */
 	validation?: {
 		min?: number;

@@ -229,14 +229,14 @@ export function FormFieldRenderer({
 						onValueChange={(val) => onChange(field.id, val)}
 						className={compact ? "flex flex-wrap gap-x-4 gap-y-2" : "space-y-2"}
 					>
-						{field.options?.map((option) => (
+						{field.options?.map((option, i) => (
 							<div key={option} className="flex items-center space-x-2">
 								<RadioGroupItem value={option} id={`${field.id}-${option}`} />
 								<Label
 									htmlFor={`${field.id}-${option}`}
 									className={`cursor-pointer font-normal ${labelClass}`}
 								>
-									{option}
+									{getFieldLabel(option, field.optionsEs?.[i])}
 								</Label>
 							</div>
 						))}
@@ -254,7 +254,7 @@ export function FormFieldRenderer({
 					<div
 						className={compact ? "flex flex-wrap gap-x-4 gap-y-2" : "space-y-2"}
 					>
-						{field.options?.map((option) => (
+						{field.options?.map((option, i) => (
 							<div key={option} className="flex items-center space-x-2">
 								<Checkbox
 									id={`${field.id}-${option}`}
@@ -279,7 +279,7 @@ export function FormFieldRenderer({
 									htmlFor={`${field.id}-${option}`}
 									className={`cursor-pointer font-normal ${labelClass}`}
 								>
-									{option}
+									{getFieldLabel(option, field.optionsEs?.[i])}
 								</Label>
 							</div>
 						))}
@@ -304,9 +304,9 @@ export function FormFieldRenderer({
 							/>
 						</SelectTrigger>
 						<SelectContent>
-							{field.options?.map((option) => (
+							{field.options?.map((option, i) => (
 								<SelectItem key={option} value={option}>
-									{option}
+									{getFieldLabel(option, field.optionsEs?.[i])}
 								</SelectItem>
 							))}
 						</SelectContent>
