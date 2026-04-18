@@ -239,7 +239,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 		const state = useFormStore.getState();
 		return !(state.isEditing && state.selectedForm?.id === formId);
 	});
-	const { t } = useLanguage();
+	const { t, getFieldLabel } = useLanguage();
 	const fieldTypes = getFieldTypes(t);
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [showAddField, setShowAddField] = useState(false);
@@ -258,6 +258,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 	const [newFieldPlaceholderEs, setNewFieldPlaceholderEs] = useState("");
 	const [newFieldRequired, setNewFieldRequired] = useState(false);
 	const [newFieldOptions, setNewFieldOptions] = useState("");
+	const [newFieldOptionsEs, setNewFieldOptionsEs] = useState("");
 	// Type-specific: password
 	const [newFieldMinLength, setNewFieldMinLength] = useState<number | "">("");
 	const [newFieldShowStrength, setNewFieldShowStrength] = useState(false);
@@ -429,6 +430,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldPlaceholderEs("");
 		setNewFieldRequired(false);
 		setNewFieldOptions("");
+		setNewFieldOptionsEs("");
 		setNewFieldMinLength("");
 		setNewFieldShowStrength(false);
 		setNewFieldMin("");
@@ -447,6 +449,22 @@ export function FormEditor({ formId }: FormEditorProps) {
 	};
 
 	const buildFieldFromForm = (id: string, existing?: FormField): FormField => {
+		const isChoiceField = ["radio", "checkbox-group", "dropdown"].includes(
+			newFieldType,
+		);
+		const options =
+			isChoiceField && newFieldOptions
+				? newFieldOptions.split(",").map((o) => o.trim())
+				: undefined;
+
+		let optionsEs: string[] | undefined;
+		if (isChoiceField && options && newFieldOptionsEs.trim()) {
+			const parsed = newFieldOptionsEs.split(",").map((o) => o.trim());
+			const normalized = parsed.slice(0, options.length);
+			while (normalized.length < options.length) normalized.push("");
+			optionsEs = normalized.some((o) => o.length > 0) ? normalized : undefined;
+		}
+
 		const base: FormField = {
 			id,
 			type: newFieldType,
@@ -455,11 +473,8 @@ export function FormEditor({ formId }: FormEditorProps) {
 			placeholder: newFieldPlaceholder || undefined,
 			placeholderEs: newFieldPlaceholderEs.trim() || undefined,
 			required: newFieldRequired,
-			options:
-				["radio", "checkbox-group", "dropdown"].includes(newFieldType) &&
-				newFieldOptions
-					? newFieldOptions.split(",").map((o) => o.trim())
-					: undefined,
+			options,
+			optionsEs,
 		};
 
 		const validation: FormField["validation"] = {};
@@ -540,6 +555,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldPlaceholderEs(field.placeholderEs || "");
 		setNewFieldRequired(field.required || false);
 		setNewFieldOptions(field.options?.join(", ") || "");
+		setNewFieldOptionsEs(field.optionsEs?.join(", ") || "");
 		setNewFieldMinLength(field.validation?.minLength ?? "");
 		setNewFieldShowStrength(field.properties?.showStrength ?? false);
 		setNewFieldMin(field.validation?.min ?? "");
@@ -717,12 +733,26 @@ export function FormEditor({ formId }: FormEditorProps) {
 			{["radio", "checkbox-group", "dropdown"].includes(newFieldType) && (
 				<div>
 					<Label>{t("fieldProperties.optionsComma")}</Label>
-					<Input
-						value={newFieldOptions}
-						onChange={(e) => setNewFieldOptions(e.target.value)}
-						placeholder={t("fieldProperties.optionsPlaceholder")}
-						className="mt-1"
-					/>
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+						<Input
+							value={newFieldOptions}
+							onChange={(e) => setNewFieldOptions(e.target.value)}
+							placeholder={t("fieldProperties.optionsPlaceholder")}
+						/>
+						<Input
+							value={newFieldOptionsEs}
+							onChange={(e) => setNewFieldOptionsEs(e.target.value)}
+							placeholder={t("fieldProperties.optionsEsPlaceholder")}
+						/>
+					</div>
+					<div className="hidden sm:grid grid-cols-2 gap-2">
+						<span className="text-[10px] text-muted-foreground">
+							{t("formEditor.english")}
+						</span>
+						<span className="text-[10px] text-muted-foreground">
+							{t("formEditor.spanish")}
+						</span>
+					</div>
 				</div>
 			)}
 
@@ -990,7 +1020,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 								{t("formEditor.editFields")}
 							</h1>
 							<p className="text-xs md:text-sm text-muted-foreground truncate">
-								{selectedForm.name}
+								{getFieldLabel(selectedForm.name, selectedForm.nameEs)}
 							</p>
 						</div>
 					</div>

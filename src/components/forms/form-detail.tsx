@@ -180,10 +180,13 @@ export function FormDetail({
 					<Separator orientation="vertical" className="h-6" />
 					<div className="flex-1 min-w-0">
 						<h1 className="text-2xl font-semibold text-foreground truncate">
-							{selectedForm.name}
+							{getFieldLabel(selectedForm.name, selectedForm.nameEs)}
 						</h1>
 						<p className="text-sm text-muted-foreground mt-1 truncate">
-							{selectedForm.description}
+							{getFieldLabel(
+								selectedForm.description,
+								selectedForm.descriptionEs,
+							)}
 						</p>
 					</div>
 					<div className="flex items-center gap-2 shrink-0">

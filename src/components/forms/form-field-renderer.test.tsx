@@ -3,12 +3,11 @@ import { render, fireEvent } from "@testing-library/react";
 import { FormFieldRenderer } from "./form-field-renderer";
 import type { FormField } from "@/lib/types/form";
 
-// Mock LanguageProvider
 vi.mock("@/components/LanguageProvider", () => ({
 	useLanguage: () => ({
 		t: (key: string) => key,
 		language: "en",
-		getFieldLabel: (en: string) => en,
+		getFieldLabel: (en: string, es?: string) => (es ? es : en),
 		getFieldPlaceholder: (en?: string) => en || "",
 	}),
 }));
@@ -285,6 +284,71 @@ describe("FormFieldRenderer", () => {
 		);
 
 		expect(container).toHaveTextContent("*");
+	});
+
+	it("renders radio option labels from optionsEs with fallback to options", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "radio",
+			options: ["Red", "Blue"],
+			optionsEs: ["Rojo", ""],
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		expect(container).toHaveTextContent("Rojo");
+		expect(container).toHaveTextContent("Blue");
+	});
+
+	it("keeps english value on radio change even when optionsEs is shown", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "radio",
+			options: ["Red", "Blue"],
+			optionsEs: ["Rojo", "Azul"],
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		const radios = container.querySelectorAll('[role="radio"]');
+		fireEvent.click(radios[0]);
+		expect(onChange).toHaveBeenCalledWith("test-field", "Red");
+	});
+
+	it("renders checkbox-group labels from optionsEs with fallback", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "checkbox-group",
+			options: ["Red", "Blue", "Green"],
+			optionsEs: ["Rojo", "Azul"],
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value={[]} onChange={onChange} />,
+		);
+
+		expect(container).toHaveTextContent("Rojo");
+		expect(container).toHaveTextContent("Azul");
+		expect(container).toHaveTextContent("Green");
+	});
+
+	it("renders dropdown option labels from optionsEs with fallback", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "dropdown",
+			options: ["Red", "Blue"],
+			optionsEs: ["Rojo", "Azul"],
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		expect(container.querySelector('[role="combobox"]')).toBeInTheDocument();
 	});
 
 	it("should return null for unknown field type", () => {

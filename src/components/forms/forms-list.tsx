@@ -78,6 +78,7 @@ function FormCardRow({
 	cloningId,
 	t,
 	language,
+	getFieldLabel,
 }: {
 	form: Form;
 	onView: (id: string) => void;
@@ -87,6 +88,7 @@ function FormCardRow({
 	cloningId: string | null;
 	t: (key: string) => string;
 	language: string;
+	getFieldLabel: (label: string, labelEs?: string) => string;
 }) {
 	const dateLocale = language === "es" ? es : enUS;
 	const isBusy = cloningId === form.id;
@@ -96,7 +98,9 @@ function FormCardRow({
 			onClick={() => onView(form.id)}
 		>
 			<div className="min-w-0 flex-1">
-				<p className="font-medium text-sm truncate">{form.name}</p>
+				<p className="font-medium text-sm truncate">
+					{getFieldLabel(form.name, form.nameEs)}
+				</p>
 				{form.tags.length > 0 && (
 					<div className="flex items-center gap-1 mt-0.5">
 						<Tag className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -217,7 +221,7 @@ export function FormsList({
 	onCreateForm,
 }: FormsListProps) {
 	const { forms, deleteForm, cloneForm, isLoading } = useFormStore();
-	const { t, language } = useLanguage();
+	const { t, language, getFieldLabel } = useLanguage();
 	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -226,9 +230,14 @@ export function FormsList({
 	const dateLocale = language === "es" ? es : enUS;
 
 	const filteredForms = forms.filter((form) => {
+		const displayName = getFieldLabel(form.name, form.nameEs).toLowerCase();
+		const displayDesc = getFieldLabel(
+			form.description,
+			form.descriptionEs,
+		).toLowerCase();
 		const matchesSearch =
-			form.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			form.description.toLowerCase().includes(searchQuery.toLowerCase());
+			displayName.includes(searchQuery.toLowerCase()) ||
+			displayDesc.includes(searchQuery.toLowerCase());
 		const matchesStatus =
 			statusFilter === "all" || form.status === statusFilter;
 		return matchesSearch && matchesStatus;
@@ -251,7 +260,12 @@ export function FormsList({
 		setCloningId(form.id);
 		try {
 			const cloned = await cloneForm(form.id);
-			toast.success(t("formsList.cloneSuccess").replace("{name}", form.name));
+			toast.success(
+				t("formsList.cloneSuccess").replace(
+					"{name}",
+					getFieldLabel(form.name, form.nameEs),
+				),
+			);
 			router.push(`/${cloned.id}`);
 		} catch {
 			toast.error(t("formsList.cloneError"));
@@ -399,6 +413,7 @@ export function FormsList({
 									cloningId={cloningId}
 									t={t}
 									language={language}
+									getFieldLabel={getFieldLabel}
 								/>
 							))}
 						</div>
@@ -430,7 +445,7 @@ export function FormsList({
 											onClick={() => onViewForm(form.id)}
 										>
 											<TableCell className="font-medium">
-												{form.name}
+												{getFieldLabel(form.name, form.nameEs)}
 												{form.tags.length > 0 && (
 													<div className="flex items-center gap-1 mt-0.5">
 														<Tag className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -443,7 +458,10 @@ export function FormsList({
 												)}
 											</TableCell>
 											<TableCell className="hidden max-w-xs truncate text-muted-foreground sm:table-cell">
-												{form.description || (
+												{getFieldLabel(
+													form.description,
+													form.descriptionEs,
+												) || (
 													<span className="italic opacity-50">
 														{t("formsList.noDescription")}
 													</span>
