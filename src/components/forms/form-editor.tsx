@@ -61,6 +61,7 @@ import {
 	Link,
 	Lock,
 	Star,
+	CreditCard,
 	AlignLeft,
 	ChevronDown,
 	ChevronRight,
@@ -91,6 +92,7 @@ function getFieldTypes(t: (key: string) => string): {
 		{ value: "time", label: t("fieldTypes.time"), icon: Clock },
 		{ value: "datetime", label: t("fieldTypes.datetime"), icon: Clock },
 		{ value: "rating", label: t("fieldTypes.rating"), icon: Star },
+		{ value: "card", label: t("fieldTypes.card"), icon: CreditCard },
 		{ value: "address", label: t("fieldTypes.address"), icon: MapPin },
 		{ value: "file", label: t("fieldTypes.file"), icon: Upload },
 		{ value: "checkbox", label: t("fieldTypes.checkbox"), icon: CheckSquare },
@@ -191,6 +193,15 @@ function getFieldSchemaPreview(field: FormField): {
 			input.rating = 0;
 			output.rating = "number";
 			break;
+		case "card":
+			output.tokenId = "string";
+			output.brand = "string";
+			output.last4 = "string";
+			output.expMonth = "number";
+			output.expYear = "number";
+			output.masked = "string";
+			output.holderName = "string (optional)";
+			break;
 		default:
 			output.value = "unknown";
 	}
@@ -224,6 +235,12 @@ function getFieldPropertyBadges(field: FormField): string[] {
 		badges.push(`from: ${field.properties.dateMin}`);
 	if (field.properties?.dateMax) badges.push(`to: ${field.properties.dateMax}`);
 	if (field.properties?.includeMiddleName) badges.push("middle name");
+	if (field.properties?.enableAutocomplete === false)
+		badges.push("no autocomplete");
+	if (field.properties?.enableUspsValidation) badges.push("USPS validate");
+	if (field.properties?.acceptedBrands?.length)
+		badges.push(`cards: ${field.properties.acceptedBrands.join(",")}`);
+	if (field.properties?.requireHolderName) badges.push("card name");
 	return badges;
 }
 
@@ -284,6 +301,18 @@ export function FormEditor({ formId }: FormEditorProps) {
 	const [newFieldTimeStep, setNewFieldTimeStep] = useState<number | "">("");
 	// Type-specific: name
 	const [newFieldIncludeMiddleName, setNewFieldIncludeMiddleName] =
+		useState(false);
+	// Type-specific: address
+	const [
+		newFieldEnableAddressAutocomplete,
+		setNewFieldEnableAddressAutocomplete,
+	] = useState(true);
+	const [newFieldEnableUspsValidation, setNewFieldEnableUspsValidation] =
+		useState(false);
+	// Type-specific: card
+	const [newFieldAcceptedCardBrands, setNewFieldAcceptedCardBrands] =
+		useState("");
+	const [newFieldRequireHolderName, setNewFieldRequireHolderName] =
 		useState(false);
 
 	// Edit field state
@@ -446,6 +475,10 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldDateMax("");
 		setNewFieldTimeStep("");
 		setNewFieldIncludeMiddleName(false);
+		setNewFieldEnableAddressAutocomplete(true);
+		setNewFieldEnableUspsValidation(false);
+		setNewFieldAcceptedCardBrands("");
+		setNewFieldRequireHolderName(false);
 	};
 
 	const buildFieldFromForm = (id: string, existing?: FormField): FormField => {
@@ -519,6 +552,19 @@ export function FormEditor({ formId }: FormEditorProps) {
 		if (newFieldType === "name") {
 			properties.includeMiddleName = newFieldIncludeMiddleName;
 		}
+		if (newFieldType === "address") {
+			properties.enableAutocomplete = newFieldEnableAddressAutocomplete;
+			properties.enableUspsValidation = newFieldEnableUspsValidation;
+		}
+		if (newFieldType === "card") {
+			if (newFieldAcceptedCardBrands.trim()) {
+				properties.acceptedBrands = newFieldAcceptedCardBrands
+					.split(",")
+					.map((s) => s.trim().toLowerCase())
+					.filter(Boolean);
+			}
+			properties.requireHolderName = newFieldRequireHolderName;
+		}
 
 		if (Object.keys(validation).length > 0) base.validation = validation;
 		if (Object.keys(properties).length > 0) base.properties = properties;
@@ -573,6 +619,16 @@ export function FormEditor({ formId }: FormEditorProps) {
 			field.type === "time" ? (field.validation?.step ?? "") : "",
 		);
 		setNewFieldIncludeMiddleName(field.properties?.includeMiddleName ?? false);
+		setNewFieldEnableAddressAutocomplete(
+			field.properties?.enableAutocomplete !== false,
+		);
+		setNewFieldEnableUspsValidation(
+			field.properties?.enableUspsValidation === true,
+		);
+		setNewFieldAcceptedCardBrands(
+			field.properties?.acceptedBrands?.join(", ") ?? "",
+		);
+		setNewFieldRequireHolderName(field.properties?.requireHolderName ?? false);
 		setShowEditField(true);
 	};
 
@@ -728,6 +784,49 @@ export function FormEditor({ formId }: FormEditorProps) {
 						onCheckedChange={setNewFieldIncludeMiddleName}
 					/>
 				</div>
+			)}
+
+			{newFieldType === "address" && (
+				<>
+					<div className="flex items-center justify-between">
+						<Label>{t("fieldProperties.enableAddressAutocomplete")}</Label>
+						<Switch
+							checked={newFieldEnableAddressAutocomplete}
+							onCheckedChange={setNewFieldEnableAddressAutocomplete}
+						/>
+					</div>
+					<div className="flex items-center justify-between">
+						<Label>{t("fieldProperties.enableUspsValidation")}</Label>
+						<Switch
+							checked={newFieldEnableUspsValidation}
+							onCheckedChange={setNewFieldEnableUspsValidation}
+						/>
+					</div>
+				</>
+			)}
+
+			{newFieldType === "card" && (
+				<>
+					<div>
+						<Label>{t("fieldProperties.acceptedCardBrands")}</Label>
+						<Input
+							value={newFieldAcceptedCardBrands}
+							onChange={(e) => setNewFieldAcceptedCardBrands(e.target.value)}
+							placeholder="visa, mastercard, amex"
+							className="mt-1"
+						/>
+						<p className="text-[10px] text-muted-foreground mt-1">
+							{t("card.brandsHint")}
+						</p>
+					</div>
+					<div className="flex items-center justify-between">
+						<Label>{t("fieldProperties.requireHolderName")}</Label>
+						<Switch
+							checked={newFieldRequireHolderName}
+							onCheckedChange={setNewFieldRequireHolderName}
+						/>
+					</div>
+				</>
 			)}
 
 			{["radio", "checkbox-group", "dropdown"].includes(newFieldType) && (

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { PhoneInput } from "@/components/forms/phone-input";
 import { AddressInput } from "@/components/forms/address-input";
+import { CardInput } from "@/components/forms/card-input";
 import { NameInput } from "@/components/forms/name-input";
 import { Star } from "lucide-react";
 import { useState } from "react";
@@ -178,6 +179,44 @@ export function FormFieldRenderer({
 							onChange={(val) => onChange(field.id, val)}
 							largeText={largeText}
 							showAutocompleteToggle={!compact}
+							allowAutocomplete={field.properties?.enableAutocomplete !== false}
+							allowUspsValidation={
+								field.properties?.enableUspsValidation === true
+							}
+						/>
+					)}
+				</div>
+			);
+
+		case "card":
+			return (
+				<div className="space-y-2">
+					<Label className={labelClass}>
+						{fieldLabel}
+						{field.required && <span className="text-destructive ml-1">*</span>}
+					</Label>
+					{compact ? (
+						<Input
+							readOnly
+							value={
+								value && typeof value === "object" && "masked" in value
+									? String(value.masked)
+									: ""
+							}
+							placeholder={fieldPlaceholder || "••••"}
+							className={inputClass}
+						/>
+					) : (
+						<CardInput
+							value={
+								value && typeof value === "object" && "tokenId" in value
+									? value
+									: null
+							}
+							onChange={(val) => onChange(field.id, val)}
+							largeText={largeText}
+							acceptedBrands={field.properties?.acceptedBrands}
+							requireHolderName={field.properties?.requireHolderName === true}
 						/>
 					)}
 				</div>

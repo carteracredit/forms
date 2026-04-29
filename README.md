@@ -18,6 +18,21 @@ npm create cloudflare@latest -- --template=cloudflare/templates/next-starter-tem
 
 A live public deployment of this template is available at [https://next-starter-template.templates.workers.dev](https://next-starter-template.templates.workers.dev)
 
+## Environment variables
+
+Copy `.env.example` to `.env.local` for local development.
+
+**Public (`NEXT_PUBLIC_*`):** workflow URL, auth URLs, cases-svc base URL for card tokenization.
+
+**Secrets (never `NEXT_PUBLIC_*`, never commit):** set these on the deployed Worker (`wrangler secret put …`) or in `.env.local`:
+
+| Variable                                | Used for                                                             |
+| --------------------------------------- | -------------------------------------------------------------------- |
+| `USPS_CLIENT_ID` / `USPS_CLIENT_SECRET` | USPS OAuth2 → ZIP→city/state + address validation (`/api/address/*`) |
+| `GOOGLE_PLACES_API_KEY`                 | Google Places Autocomplete + Place Details (`/api/address/*`)        |
+
+If secrets are unset, address API routes return `503` with a generic message; the UI falls back to manual entry.
+
 ## Getting Started
 
 First, run:

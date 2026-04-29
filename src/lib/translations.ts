@@ -241,6 +241,7 @@ export const translations = {
 			datetime: "Date & Time",
 			rating: "Rating",
 			address: "Address Field",
+			card: "Payment Card",
 			file: "File Upload",
 			checkbox: "Checkbox",
 			radio: "Radio Buttons",
@@ -265,6 +266,10 @@ export const translations = {
 			optionsPlaceholder: "Option 1, Option 2, Option 3",
 			optionsEsPlaceholder: "Spanish option 1, option 2 (optional)",
 			includeMiddleName: "Include Middle Name",
+			enableAddressAutocomplete: "Google Places autocomplete",
+			enableUspsValidation: "USPS address validation",
+			acceptedCardBrands: "Accepted card brands (visa, mastercard, amex, …)",
+			requireHolderName: "Require cardholder name",
 		},
 
 		// Field Library
@@ -286,7 +291,9 @@ export const translations = {
 			dropdownFieldDesc:
 				"Single-selection dropdown menu from predefined options",
 			addressFieldDesc:
-				"Structured address input with optional Google Places autocomplete",
+				"Structured US address with optional Google autocomplete and USPS validation",
+			cardFieldDesc:
+				"Card number, expiry, and CVC — saved as a secure token (PAN encrypted server-side)",
 			fileFieldDesc:
 				"File upload field with drag-and-drop support and file type validation",
 			fileUploadDesc:
@@ -304,6 +311,10 @@ export const translations = {
 			datetimeFieldDesc:
 				"Combined date and time selection with timezone support",
 			ratingFieldDesc: "Star rating input with configurable maximum rating",
+			cardTokenization:
+				"Tokenizes via cases-svc — PAN encrypted at rest; CVC never stored",
+			cardFormatting: "Brand-aware spacing and validation (Visa, MC, Amex, …)",
+			cardValidation: "Luhn check, expiry, and CVC length before tokenization",
 			properties: "Properties",
 			features: "Features",
 			inputSchema: "Input Schema",
@@ -530,6 +541,21 @@ export const translations = {
 		address: {
 			autocomplete: "Address Autocomplete",
 			autocompleteDesc: "Use Google Places to find addresses quickly",
+			autocompleteUnavailable:
+				"Address suggestions are temporarily unavailable. You can keep typing.",
+			zipLookupFailed:
+				"ZIP lookup failed. Enter city and state manually if needed.",
+			placeLookupFailed: "Could not load place details. Try again.",
+			uspsSuggested: "USPS standardized address",
+			uspsUseSuggestion: "Use USPS suggestion",
+			uspsKeepMine: "Keep mine",
+			uspsUnavailable:
+				"USPS validation is temporarily unavailable. Your address was not verified.",
+			uspsValidated: "Address matches USPS records.",
+			uspsApplied: "USPS suggestion applied.",
+			uspsValidate: "Validate with USPS",
+			uspsValidateHint:
+				"Uses USPS Address API when credentials are configured.",
 			street: "Street Address",
 			streetPlaceholder: "123 Main Street",
 			street2: "Apartment, suite, etc.",
@@ -542,6 +568,22 @@ export const translations = {
 			zipPlaceholder: "94102",
 			country: "Country",
 			countryPlaceholder: "United States",
+		},
+
+		// Card (tokenized; PAN/CVC never stored in forms backend)
+		card: {
+			number: "Card number",
+			expiry: "Expiry (MM/YY)",
+			cvc: "Security code",
+			holderName: "Name on card",
+			tokenize: "Save card securely",
+			tokenized: "Card saved",
+			replace: "Replace card",
+			invalidNumber: "Invalid card number",
+			expiredCard: "Card has expired",
+			invalidCvc: "Invalid security code",
+			tokenizeFailed: "Could not save card. Try again.",
+			brandsHint: "Accepted brands (comma-separated ISO codes)",
 		},
 
 		// Phone
@@ -816,6 +858,7 @@ export const translations = {
 			datetime: "Fecha y Hora",
 			rating: "Calificación",
 			address: "Campo de Dirección",
+			card: "Tarjeta de Pago",
 			file: "Carga de Archivo",
 			checkbox: "Casilla de Verificación",
 			radio: "Botones de Radio",
@@ -840,6 +883,11 @@ export const translations = {
 			optionsPlaceholder: "Opción 1, Opción 2, Opción 3",
 			optionsEsPlaceholder: "Opción 1 en español, Opción 2 (opcional)",
 			includeMiddleName: "Incluir Segundo Nombre",
+			enableAddressAutocomplete: "Autocompletado Google Places",
+			enableUspsValidation: "Validación de dirección USPS",
+			acceptedCardBrands:
+				"Marcas aceptadas (visa, mastercard, amex, … separadas por coma)",
+			requireHolderName: "Requerir nombre del titular",
 		},
 
 		// Field Library
@@ -866,7 +914,9 @@ export const translations = {
 			dropdownFieldDesc:
 				"Menú desplegable de selección única con opciones predefinidas",
 			addressFieldDesc:
-				"Entrada de dirección estructurada con autocompletado opcional de Google Places",
+				"Dirección estructurada (EE.UU.) con autocompletado Google y validación USPS opcional",
+			cardFieldDesc:
+				"Número, vencimiento y CVC — se guarda como token seguro (PAN cifrado en el servidor)",
 			fileFieldDesc:
 				"Campo de carga de archivos con soporte de arrastrar y soltar y validación de tipo de archivo",
 			fileUploadDesc:
@@ -886,6 +936,11 @@ export const translations = {
 				"Selección combinada de fecha y hora con soporte de zona horaria",
 			ratingFieldDesc:
 				"Entrada de calificación por estrellas con calificación máxima configurable",
+			cardTokenization:
+				"Tokenización vía cases-svc — PAN cifrado en reposo; CVC nunca almacenado",
+			cardFormatting: "Espaciado y validación según marca (Visa, MC, Amex, …)",
+			cardValidation:
+				"Verificación Luhn, vencimiento y longitud de CVC antes de tokenizar",
 			properties: "Propiedades",
 			features: "Características",
 			inputSchema: "Esquema de Entrada",
@@ -1116,6 +1171,21 @@ export const translations = {
 			autocomplete: "Autocompletado de Dirección",
 			autocompleteDesc:
 				"Usa Google Places para encontrar direcciones rápidamente",
+			autocompleteUnavailable:
+				"Las sugerencias no están disponibles. Puede seguir escribiendo.",
+			zipLookupFailed:
+				"No se pudo obtener ciudad/estado desde el código postal.",
+			placeLookupFailed: "No se pudieron cargar los datos del lugar.",
+			uspsSuggested: "Dirección estandarizada USPS",
+			uspsUseSuggestion: "Usar sugerencia USPS",
+			uspsKeepMine: "Dejar la mía",
+			uspsUnavailable:
+				"Validación USPS no disponible. La dirección no fue verificada.",
+			uspsValidated: "La dirección coincide con USPS.",
+			uspsApplied: "Sugerencia USPS aplicada.",
+			uspsValidate: "Validar con USPS",
+			uspsValidateHint:
+				"Usa la API de USPS cuando las credenciales están configuradas.",
 			street: "Dirección",
 			streetPlaceholder: "Calle Principal 123",
 			street2: "Apartamento, suite, etc.",
@@ -1128,6 +1198,22 @@ export const translations = {
 			zipPlaceholder: "01000",
 			country: "País",
 			countryPlaceholder: "México",
+		},
+
+		card: {
+			number: "Número de tarjeta",
+			expiry: "Vencimiento (MM/AA)",
+			cvc: "Código de seguridad",
+			holderName: "Nombre en la tarjeta",
+			tokenize: "Guardar tarjeta de forma segura",
+			tokenized: "Tarjeta guardada",
+			replace: "Cambiar tarjeta",
+			invalidNumber: "Número de tarjeta inválido",
+			expiredCard: "Tarjeta vencida",
+			invalidCvc: "Código de seguridad inválido",
+			tokenizeFailed: "No se pudo guardar la tarjeta. Intente de nuevo.",
+			brandsHint:
+				"Marcas aceptadas (códigos ISO separados por coma: visa, mastercard)",
 		},
 
 		// Phone

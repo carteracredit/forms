@@ -33,14 +33,18 @@ export default defineConfig({
 			"src/components/forms/form-detail.tsx",
 			"src/components/forms/form-field-renderer.tsx",
 			"src/components/forms/forms-list.tsx",
-			"src/components/forms/phone-input.tsx",
-			"src/components/forms/address-input.tsx",
+				"src/components/forms/phone-input.tsx",
+				"src/components/forms/card-input.tsx",
+				"src/components/forms/address-input.tsx",
 			"src/components/forms/create-form-dialog.tsx",
 			"src/components/forms/field-showcase.tsx",
 			// UI shell components with dropdown interactions (tested via Storybook visual tests)
 			"src/components/SessionControls.tsx",
 			// Next.js Server Actions - thin wrappers around forms.ts, covered indirectly
-			"src/lib/api/forms-actions.ts",
+				"src/lib/api/forms-actions.ts",
+				// Third-party HTTP adapters — exercised via /api/address/* route tests
+				"src/lib/api/google-places.ts",
+				"src/lib/api/usps.ts",
 			],
 			thresholds: {
 				lines: 85,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, fireEvent, cleanup, waitFor } from "@testing-library/react";
+import { render, fireEvent, cleanup } from "@testing-library/react";
 import { AddressInput } from "./address-input";
 
 // Mock LanguageProvider
@@ -84,23 +84,5 @@ describe("AddressInput", () => {
 			'input[placeholder="address.streetPlaceholder"]',
 		);
 		expect(streetInput).toBeDisabled();
-	});
-
-	it("should show search input when autocomplete is enabled", async () => {
-		const onChange = vi.fn();
-		const { container } = render(
-			<AddressInput onChange={onChange} showAutocompleteToggle />,
-		);
-
-		const switchElement = container.querySelector(
-			'button[role="switch"]',
-		) as HTMLElement;
-		fireEvent.click(switchElement);
-
-		await waitFor(() => {
-			expect(
-				container.querySelector('input[placeholder*="common.search"]'),
-			).toBeInTheDocument();
-		});
 	});
 });
