@@ -1,3 +1,10 @@
+# [1.0.0-rc.16](https://github.com/carteracredit/forms/compare/v1.0.0-rc.15...v1.0.0-rc.16) (2026-04-29)
+
+
+### Features
+
+* add address and card tokenization APIs with Google Places integration ([a850953](https://github.com/carteracredit/forms/commit/a850953cd5a341f5a66bb534104761cb8a146fe1))
+
 # [1.0.0-rc.15](https://github.com/carteracredit/forms/compare/v1.0.0-rc.14...v1.0.0-rc.15) (2026-04-18)
 
 
