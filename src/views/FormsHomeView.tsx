@@ -36,9 +36,14 @@ export function FormsHomeView() {
 		router.push(`/${formId}/editor`);
 	};
 
-	const handleCreateForm = async (name: string, description: string) => {
+	const handleCreateForm = async (payload: {
+		name: string;
+		nameEs?: string;
+		description?: string;
+		descriptionEs?: string;
+	}) => {
 		try {
-			const newForm = await createForm(name, description);
+			const newForm = await createForm(payload);
 			router.push(`/${newForm.id}?tab=fieldLibrary`);
 		} catch {
 			// Error is already set in store and toasted via useEffect

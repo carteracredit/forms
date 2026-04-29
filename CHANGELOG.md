@@ -1,3 +1,11 @@
+# [1.0.0-rc.15](https://github.com/carteracredit/forms/compare/v1.0.0-rc.14...v1.0.0-rc.15) (2026-04-18)
+
+
+### Features
+
+* add bilingual support for form field options ([26fbe93](https://github.com/carteracredit/forms/commit/26fbe93d142959f4c2316f58880eecb523af0e31))
+* enhance form creation and editing with bilingual support ([1793a12](https://github.com/carteracredit/forms/commit/1793a1240f96c4ff19d495c055050815c5bad637))
+
 # [1.0.0-rc.14](https://github.com/carteracredit/forms/compare/v1.0.0-rc.13...v1.0.0-rc.14) (2026-03-23)
 
 
