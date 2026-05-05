@@ -26,22 +26,10 @@ describe("AddressInput", () => {
 		expect(container).toHaveTextContent("address.country");
 	});
 
-	it("should render autocomplete toggle when showAutocompleteToggle is true", () => {
+	it("renders search input when autocomplete is enabled (default)", () => {
 		const onChange = vi.fn();
-		const { container } = render(
-			<AddressInput onChange={onChange} showAutocompleteToggle />,
-		);
-
-		expect(container).toHaveTextContent("address.autocomplete");
-	});
-
-	it("should hide autocomplete toggle when showAutocompleteToggle is false", () => {
-		const onChange = vi.fn();
-		const { container } = render(
-			<AddressInput onChange={onChange} showAutocompleteToggle={false} />,
-		);
-
-		expect(container).not.toHaveTextContent("address.autocomplete");
+		const { getByLabelText } = render(<AddressInput onChange={onChange} />);
+		expect(getByLabelText(/common\.search/u)).toBeInTheDocument();
 	});
 
 	it("should call onChange when street field changes", () => {

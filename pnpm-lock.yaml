@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@algenium/blocks':
-        specifier: ^1.6.0
-        version: 1.6.0(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(date-fns@4.1.0)(framer-motion@12.31.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(lucide-react@0.560.0(react@19.2.1))(next-themes@0.4.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-day-picker@9.14.0(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+        specifier: ^1.7.0
+        version: 1.7.0(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(date-fns@4.1.0)(framer-motion@12.31.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(lucide-react@0.560.0(react@19.2.1))(next-themes@0.4.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-day-picker@9.14.0(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@nanostores/react':
         specifier: ^1.0.0
         version: 1.0.0(nanostores@1.1.0)(react@19.2.1)
@@ -210,8 +210,8 @@ packages:
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
 
-  '@algenium/blocks@1.6.0':
-    resolution: {integrity: sha512-aZuBcqZYYCvX3MZVqZiTZldRkBhfk+xF5aePH7k9Qr1JbNUpTOPpwV7OYSg/7SWDKjxOpg4LTFJBrH2h2GzX6w==}
+  '@algenium/blocks@1.7.0':
+    resolution: {integrity: sha512-KMF0L1wcu/uzNxOSfkSjxsNR0GVfDSXESj9tpPvkgjje7KFwjE1Fac+dPBOVmACB6fSGcb9ZCuJuoCT0dhNXVw==}
     peerDependencies:
       date-fns: '>=4.0.0'
       framer-motion: '>=11.0.0'
@@ -9271,7 +9271,7 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
-  '@algenium/blocks@1.6.0(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(date-fns@4.1.0)(framer-motion@12.31.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(lucide-react@0.560.0(react@19.2.1))(next-themes@0.4.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-day-picker@9.14.0(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+  '@algenium/blocks@1.7.0(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(date-fns@4.1.0)(framer-motion@12.31.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(lucide-react@0.560.0(react@19.2.1))(next-themes@0.4.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-day-picker@9.14.0(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-dropdown-menu': 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)

@@ -178,7 +178,6 @@ export function FormFieldRenderer({
 							value={value}
 							onChange={(val) => onChange(field.id, val)}
 							largeText={largeText}
-							showAutocompleteToggle={!compact}
 							allowAutocomplete={field.properties?.enableAutocomplete !== false}
 							allowUspsValidation={
 								field.properties?.enableUspsValidation === true

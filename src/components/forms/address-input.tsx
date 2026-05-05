@@ -26,7 +26,6 @@ interface AddressInputProps {
 	placeholder?: string;
 	disabled?: boolean;
 	largeText?: boolean;
-	showAutocompleteToggle?: boolean;
 	allowAutocomplete?: boolean;
 	allowUspsValidation?: boolean;
 }
@@ -67,7 +66,6 @@ export function AddressInput({
 	onChange,
 	disabled = false,
 	largeText = false,
-	showAutocompleteToggle = true,
 	allowAutocomplete = true,
 	allowUspsValidation = false,
 }: AddressInputProps) {
@@ -83,6 +81,7 @@ export function AddressInput({
 			searchPlaceholder: `${t("common.search")}…`,
 			uspsValidate: t("address.uspsValidate"),
 			uspsValidating: t("address.uspsValidating"),
+			uspsVerified: t("address.uspsVerified"),
 			uspsSuggested: t("address.uspsSuggested"),
 			uspsUseSuggestion: t("address.uspsUseSuggestion"),
 			uspsKeepMine: t("address.uspsKeepMine"),
@@ -122,7 +121,6 @@ export function AddressInput({
 			onChange={onChange}
 			disabled={disabled}
 			largeText={largeText}
-			showAutocompleteToggle={showAutocompleteToggle}
 			lookupZip={(zip, signal) => lookupZip(zip, signal)}
 			validateAddress={
 				allowUspsValidation

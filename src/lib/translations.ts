@@ -552,6 +552,7 @@ export const translations = {
 			uspsUnavailable:
 				"USPS validation is temporarily unavailable. Your address was not verified.",
 			uspsValidated: "Address matches USPS records.",
+			uspsVerified: "Verified by USPS",
 			uspsApplied: "USPS suggestion applied.",
 			uspsValidate: "Validate with USPS",
 			uspsValidating: "Validating…",
@@ -1183,6 +1184,7 @@ export const translations = {
 			uspsUnavailable:
 				"Validación USPS no disponible. La dirección no fue verificada.",
 			uspsValidated: "La dirección coincide con USPS.",
+			uspsVerified: "Verificada por USPS",
 			uspsApplied: "Sugerencia USPS aplicada.",
 			uspsValidate: "Validar con USPS",
 			uspsValidating: "Validando…",
