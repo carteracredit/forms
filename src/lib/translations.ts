@@ -554,6 +554,7 @@ export const translations = {
 			uspsValidated: "Address matches USPS records.",
 			uspsApplied: "USPS suggestion applied.",
 			uspsValidate: "Validate with USPS",
+			uspsValidating: "Validating…",
 			uspsValidateHint:
 				"Uses USPS Address API when credentials are configured.",
 			street: "Street Address",
@@ -1184,6 +1185,7 @@ export const translations = {
 			uspsValidated: "La dirección coincide con USPS.",
 			uspsApplied: "Sugerencia USPS aplicada.",
 			uspsValidate: "Validar con USPS",
+			uspsValidating: "Validando…",
 			uspsValidateHint:
 				"Usa la API de USPS cuando las credenciales están configuradas.",
 			street: "Dirección",

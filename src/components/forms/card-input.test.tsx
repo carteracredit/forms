@@ -9,34 +9,27 @@ vi.mock("@/components/LanguageProvider", () => ({
 	}),
 }));
 
+const tokenizeCard = vi.fn();
+
+vi.mock("@/lib/api/cases-svc-client", () => ({
+	tokenizeCard: (...args: unknown[]) => tokenizeCard(...args),
+}));
+
 describe("CardInput", () => {
 	beforeEach(() => {
-		vi.stubGlobal(
-			"fetch",
-			vi.fn(
-				async () =>
-					new Response(
-						JSON.stringify({
-							success: true,
-							result: {
-								tokenId: "tok_test",
-								brand: "visa",
-								last4: "4242",
-								expMonth: 12,
-								expYear: 2030,
-								masked: "•••• •••• •••• 4242",
-							},
-						}),
-						{ status: 201, headers: { "content-type": "application/json" } },
-					),
-			),
-		);
+		tokenizeCard.mockResolvedValue({
+			tokenId: "tok_test",
+			brand: "visa",
+			last4: "4242",
+			expMonth: 12,
+			expYear: 2030,
+			masked: "•••• •••• •••• 4242",
+		});
 	});
 
 	afterEach(() => {
 		cleanup();
-		vi.unstubAllGlobals();
-		vi.restoreAllMocks();
+		vi.clearAllMocks();
 	});
 
 	it("shows validation error when brand is not accepted", () => {
@@ -68,7 +61,7 @@ describe("CardInput", () => {
 		expect(panInput.value).toContain("4242");
 	});
 
-	it("calls tokenize endpoint with valid card data", async () => {
+	it("calls tokenizeCard with valid card data", async () => {
 		const onChange = vi.fn();
 		const { container } = render(<CardInput onChange={onChange} />);
 
@@ -92,11 +85,12 @@ describe("CardInput", () => {
 			);
 		});
 
-		const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
-		expect(fetchMock).toHaveBeenCalledWith(
-			"/api/cards/tokenize",
+		expect(tokenizeCard).toHaveBeenCalledWith(
 			expect.objectContaining({
-				method: "POST",
+				pan: "4242424242424242",
+				expMonth: 12,
+				expYear: 2030,
+				cvc: "123",
 			}),
 		);
 	});

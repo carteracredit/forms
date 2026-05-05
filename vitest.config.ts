@@ -40,11 +40,8 @@ export default defineConfig({
 			"src/components/forms/field-showcase.tsx",
 			// UI shell components with dropdown interactions (tested via Storybook visual tests)
 			"src/components/SessionControls.tsx",
-			// Next.js Server Actions - thin wrappers around forms.ts, covered indirectly
+				// Next.js Server Actions - thin wrappers around forms.ts, covered indirectly
 				"src/lib/api/forms-actions.ts",
-				// Third-party HTTP adapters — exercised via /api/address/* route tests
-				"src/lib/api/google-places.ts",
-				"src/lib/api/usps.ts",
 			],
 			thresholds: {
 				lines: 85,
