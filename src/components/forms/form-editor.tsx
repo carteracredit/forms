@@ -29,6 +29,12 @@ import {
 	DialogFooter,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import {
 	Collapsible,
@@ -36,8 +42,12 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { FormFieldRenderer } from "@/components/forms/form-field-renderer";
+import { JSONModal } from "@/components/forms/json-modal";
 import { SessionControls } from "@/components/SessionControls";
 import { computeFieldsChecksum } from "@/lib/checksum";
+import { serializeForm } from "@/lib/forms/io";
+import { importFormAction } from "@/lib/api/forms-actions";
+import type { FormExport } from "@/lib/forms/form-export-schema";
 import {
 	ArrowLeft,
 	Plus,
@@ -46,6 +56,8 @@ import {
 	Save,
 	Eye,
 	EyeOff,
+	Download,
+	MoreVertical,
 	User,
 	Phone,
 	Mail,
@@ -331,6 +343,12 @@ export function FormEditor({ formId }: FormEditorProps) {
 	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 	const [isSavingAndLeaving, setIsSavingAndLeaving] = useState(false);
 	const pendingNavigationRef = useRef<string | null>(null);
+
+	// JSON export/import
+	const [showJsonModal, setShowJsonModal] = useState(false);
+	const [jsonModalMode, setJsonModalMode] = useState<"export" | "import">(
+		"export",
+	);
 
 	const savedFieldsRef = useRef<string>("");
 
@@ -1194,6 +1212,33 @@ export function FormEditor({ formId }: FormEditorProps) {
 									: t("formEditor.publish")}
 							</span>
 						</Button>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm" className="gap-0 px-2">
+									<MoreVertical className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem
+									onClick={() => {
+										setJsonModalMode("export");
+										setShowJsonModal(true);
+									}}
+								>
+									<Download className="h-4 w-4 mr-2" />
+									{t("formEditor.exportJson")}
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => {
+										setJsonModalMode("import");
+										setShowJsonModal(true);
+									}}
+								>
+									<Upload className="h-4 w-4 mr-2" />
+									{t("formEditor.importJson")}
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 						<SessionControls />
 					</div>
 				</div>
@@ -1528,6 +1573,40 @@ export function FormEditor({ formId }: FormEditorProps) {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* JSON Export/Import Modal */}
+			<JSONModal
+				open={showJsonModal}
+				onClose={() => setShowJsonModal(false)}
+				mode={jsonModalMode}
+				exportData={
+					jsonModalMode === "export"
+						? serializeForm(selectedForm, fields)
+						: undefined
+				}
+				allowReplace
+				onImportNew={async (data: FormExport) => {
+					try {
+						const created = await importFormAction({
+							metadata: data.metadata,
+							form: data.form,
+							fields: data.fields,
+						});
+						toast.success(
+							t("formsList.importSuccess").replace("{name}", created.name),
+						);
+						setShowJsonModal(false);
+						router.push(`/editor/${created.id}`);
+					} catch {
+						toast.error(t("formsList.importError"));
+					}
+				}}
+				onImportReplace={(data: FormExport) => {
+					setFields(data.fields as FormField[]);
+					toast.info(t("formEditor.importReplaced"));
+					setShowJsonModal(false);
+				}}
+			/>
 		</div>
 	);
 }

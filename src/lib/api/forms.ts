@@ -327,3 +327,34 @@ export async function cloneForm(
 	);
 	return apiFormToForm(json.result);
 }
+
+/**
+ * POST /forms/import
+ * Creates a new draft form from an exported JSON payload (canonical format).
+ */
+export async function importForm(
+	payload: {
+		metadata?: { version?: string; kind?: string; exportedAt?: string };
+		form: {
+			name: string;
+			nameEs?: string;
+			description?: string;
+			descriptionEs?: string;
+			tags?: string[];
+		};
+		fields: unknown[];
+	},
+	options?: FormsApiOptions,
+): Promise<Form> {
+	const baseUrl = getWorkflowServiceUrl();
+	const { json } = await fetchJson<ApiResponse<ApiForm>>(
+		`${baseUrl}/forms/import`,
+		{
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(payload),
+			jwt: options?.jwt,
+		},
+	);
+	return apiFormToForm(json.result);
+}

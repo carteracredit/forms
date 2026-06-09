@@ -31,6 +31,7 @@ import {
 	Plus,
 	Copy,
 	Loader2,
+	Download,
 } from "lucide-react";
 import {
 	DropdownMenu,
@@ -43,6 +44,8 @@ import { es, enUS } from "date-fns/locale";
 import type { Form } from "@/lib/types/form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { getFormAction } from "@/lib/api/forms-actions";
+import { serializeForm, downloadFormJson } from "@/lib/forms/io";
 
 interface FormsListProps {
 	onViewForm: (formId: string) => void;
@@ -74,6 +77,7 @@ function FormCardRow({
 	onView,
 	onEdit,
 	onClone,
+	onExport,
 	onDelete,
 	cloningId,
 	t,
@@ -84,6 +88,7 @@ function FormCardRow({
 	onView: (id: string) => void;
 	onEdit: (id: string) => void;
 	onClone: (form: Form) => void;
+	onExport: (form: Form) => void;
 	onDelete: (id: string) => void;
 	cloningId: string | null;
 	t: (key: string) => string;
@@ -157,6 +162,15 @@ function FormCardRow({
 						>
 							<Copy className="h-4 w-4 mr-2" />
 							{t("formsList.cloneForm")}
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={(e) => {
+								e.stopPropagation();
+								onExport(form);
+							}}
+						>
+							<Download className="h-4 w-4 mr-2" />
+							{t("formsList.exportJson")}
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							onClick={(e) => {
@@ -271,6 +285,16 @@ export function FormsList({
 			toast.error(t("formsList.cloneError"));
 		} finally {
 			setCloningId(null);
+		}
+	};
+
+	const handleExport = async (form: Form) => {
+		try {
+			const fullForm = await getFormAction(form.id);
+			const exportData = serializeForm(fullForm, fullForm.draftFields);
+			downloadFormJson(exportData);
+		} catch {
+			toast.error("Export failed");
 		}
 	};
 
@@ -409,6 +433,7 @@ export function FormsList({
 									onView={onViewForm}
 									onEdit={onEditForm}
 									onClone={handleClone}
+									onExport={handleExport}
 									onDelete={handleDelete}
 									cloningId={cloningId}
 									t={t}
@@ -516,6 +541,12 @@ export function FormsList({
 														<DropdownMenuItem onClick={() => handleClone(form)}>
 															<Copy className="mr-2 h-4 w-4" />
 															{t("formsList.cloneForm")}
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onClick={() => handleExport(form)}
+														>
+															<Download className="mr-2 h-4 w-4" />
+															{t("formsList.exportJson")}
 														</DropdownMenuItem>
 														<DropdownMenuItem
 															onClick={() => handleDelete(form.id)}

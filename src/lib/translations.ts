@@ -107,6 +107,27 @@ export const translations = {
 			noDescription: "No description",
 			result: "result",
 			results: "results",
+			importJson: "Import JSON",
+			exportJson: "Export JSON",
+			importSuccess: 'Form "{name}" imported successfully',
+			importError: "Error importing form",
+		},
+
+		// JSON Modal
+		jsonModal: {
+			exportTitle: "Export JSON",
+			importTitle: "Import JSON",
+			importPlaceholder: "Paste the form JSON here...",
+			cancel: "Cancel",
+			download: "Download",
+			import: "Import",
+			uploadFile: "Upload file",
+			modeNew: "Create new form",
+			modeReplace: "Replace current fields",
+			modeReplaceWarning:
+				"This will replace the current fields. Unsaved changes will be lost.",
+			errorParseJson: "Error parsing JSON",
+			errorInvalidKind: "Invalid format: this JSON is not a form definition",
 		},
 
 		// Form Status
@@ -184,6 +205,9 @@ export const translations = {
 			saveDraft: "Save Draft",
 			draftSaved: "Draft saved",
 			saveDraftError: "Failed to save draft",
+			exportJson: "Export JSON",
+			importJson: "Import JSON",
+			importReplaced: "Fields replaced from imported JSON",
 			publish: "Publish",
 			publishForm: "Publish Form",
 			publishConfirm:
@@ -722,6 +746,28 @@ export const translations = {
 			noDescription: "Sin descripción",
 			result: "resultado",
 			results: "resultados",
+			importJson: "Importar JSON",
+			exportJson: "Exportar JSON",
+			importSuccess: 'Formulario "{name}" importado exitosamente',
+			importError: "Error al importar el formulario",
+		},
+
+		// JSON Modal
+		jsonModal: {
+			exportTitle: "Exportar JSON",
+			importTitle: "Importar JSON",
+			importPlaceholder: "Pega el JSON del formulario aquí...",
+			cancel: "Cancelar",
+			download: "Descargar",
+			import: "Importar",
+			uploadFile: "Subir archivo",
+			modeNew: "Crear formulario nuevo",
+			modeReplace: "Reemplazar campos actuales",
+			modeReplaceWarning:
+				"Esto reemplazará los campos actuales. Los cambios no guardados se perderán.",
+			errorParseJson: "Error al parsear JSON",
+			errorInvalidKind:
+				"Formato inválido: este JSON no es una definición de formulario",
 		},
 
 		// Form Status
@@ -802,6 +848,9 @@ export const translations = {
 			saveDraft: "Guardar Borrador",
 			draftSaved: "Borrador guardado",
 			saveDraftError: "Error al guardar el borrador",
+			exportJson: "Exportar JSON",
+			importJson: "Importar JSON",
+			importReplaced: "Campos reemplazados desde el JSON importado",
 			publish: "Publicar",
 			publishForm: "Publicar Formulario",
 			publishConfirm:
