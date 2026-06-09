@@ -280,7 +280,7 @@ export function FormsList({
 					getFieldLabel(form.name, form.nameEs),
 				),
 			);
-			router.push(`/${cloned.id}`);
+			router.push(`/${cloned.id}/editor`);
 		} catch {
 			toast.error(t("formsList.cloneError"));
 		} finally {
