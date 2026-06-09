@@ -1,6 +1,27 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, cleanup, waitFor } from "@testing-library/react";
+import { render, cleanup, waitFor, fireEvent } from "@testing-library/react";
 import { FormDetail } from "./form-detail";
+
+const { mockSerializeForm, mockDownloadFormJson, mockToastError } = vi.hoisted(
+	() => ({
+		mockSerializeForm: vi.fn(() => ({ version: "v1.0", fields: [] })),
+		mockDownloadFormJson: vi.fn(),
+		mockToastError: vi.fn(),
+	}),
+);
+
+vi.mock("@/lib/forms/io", () => ({
+	serializeForm: mockSerializeForm,
+	downloadFormJson: mockDownloadFormJson,
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		success: vi.fn(),
+		error: mockToastError,
+		info: vi.fn(),
+	},
+}));
 
 const mockPush = vi.fn();
 
@@ -20,6 +41,24 @@ vi.mock("@/components/LanguageProvider", () => ({
 
 vi.mock("./edit-form-info-dialog", () => ({
 	EditFormInfoDialog: () => null,
+}));
+
+vi.mock("@/components/forms/json-modal", () => ({
+	JSONModal: ({
+		open,
+		mode,
+	}: {
+		open: boolean;
+		mode: string;
+		onClose: () => void;
+		onImportNew: () => void;
+		exportData?: unknown;
+	}) =>
+		open ? (
+			<div data-testid="json-modal" data-mode={mode}>
+				json-modal-{mode}
+			</div>
+		) : null,
 }));
 
 vi.mock("@/components/SessionControls", () => ({
@@ -153,5 +192,49 @@ describe("FormDetail", { timeout: 20_000 }, () => {
 		await waitFor(() => {
 			expect(mockStoreState.refreshForm).toHaveBeenCalledWith("form-1");
 		});
+	});
+
+	it("muestra el botón 'Export JSON' en el header", async () => {
+		const { getByText } = render(<FormDetail formId="form-1" />);
+
+		await waitFor(() => {
+			expect(getByText("formDetail.exportJson")).toBeInTheDocument();
+		});
+	});
+
+	it("abre el modal de export al hacer click en 'Export JSON'", async () => {
+		mockSerializeForm.mockReturnValue({ version: "v1.0", fields: [] });
+		const { getByText, getByTestId } = render(<FormDetail formId="form-1" />);
+
+		await waitFor(() => {
+			expect(getByText("formDetail.exportJson")).toBeInTheDocument();
+		});
+
+		fireEvent.click(getByText("formDetail.exportJson"));
+
+		expect(mockSerializeForm).toHaveBeenCalledWith(
+			mockForm,
+			mockForm.versions[0].fields,
+		);
+		await waitFor(() => {
+			expect(getByTestId("json-modal")).toBeInTheDocument();
+			expect(getByTestId("json-modal")).toHaveAttribute("data-mode", "export");
+		});
+	});
+
+	it("muestra toast de error cuando falla el export JSON", async () => {
+		mockSerializeForm.mockImplementationOnce(() => {
+			throw new Error("serialize error");
+		});
+
+		const { getByText } = render(<FormDetail formId="form-1" />);
+
+		await waitFor(() => {
+			expect(getByText("formDetail.exportJson")).toBeInTheDocument();
+		});
+
+		fireEvent.click(getByText("formDetail.exportJson"));
+
+		expect(mockToastError).toHaveBeenCalledWith("formDetail.toastExportError");
 	});
 });
