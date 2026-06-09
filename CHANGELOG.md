@@ -1,3 +1,10 @@
+# [1.0.0-rc.18](https://github.com/carteracredit/forms/compare/v1.0.0-rc.17...v1.0.0-rc.18) (2026-06-09)
+
+
+### Features
+
+* update form cloning functionality to navigate to editor page ([6523016](https://github.com/carteracredit/forms/commit/65230165e29f59681a256890f243ebe4f6bdd72b))
+
 # [1.0.0-rc.17](https://github.com/carteracredit/forms/compare/v1.0.0-rc.16...v1.0.0-rc.17) (2026-06-09)
 
 
