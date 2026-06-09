@@ -1,3 +1,10 @@
+# [1.0.0-rc.17](https://github.com/carteracredit/forms/compare/v1.0.0-rc.16...v1.0.0-rc.17) (2026-06-09)
+
+
+### Features
+
+* implement JSON export/import functionality in form editor and forms list ([ba705ba](https://github.com/carteracredit/forms/commit/ba705ba6abdc6b710cfc90e6ed95c522b94aa9d7))
+
 # [1.0.0-rc.16](https://github.com/carteracredit/forms/compare/v1.0.0-rc.15...v1.0.0-rc.16) (2026-04-29)
 
 
