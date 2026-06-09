@@ -45,7 +45,9 @@ import type { Form } from "@/lib/types/form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getFormAction } from "@/lib/api/forms-actions";
-import { serializeForm, downloadFormJson } from "@/lib/forms/io";
+import { serializeForm } from "@/lib/forms/io";
+import { JSONModal } from "@/components/forms/json-modal";
+import type { FormExport } from "@/lib/forms/form-export-schema";
 
 interface FormsListProps {
 	onViewForm: (formId: string) => void;
@@ -240,6 +242,10 @@ export function FormsList({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 	const [cloningId, setCloningId] = useState<string | null>(null);
+	const [exportModal, setExportModal] = useState<{
+		open: boolean;
+		data: FormExport | null;
+	}>({ open: false, data: null });
 
 	const dateLocale = language === "es" ? es : enUS;
 
@@ -292,9 +298,9 @@ export function FormsList({
 		try {
 			const fullForm = await getFormAction(form.id);
 			const exportData = serializeForm(fullForm, fullForm.draftFields);
-			downloadFormJson(exportData);
+			setExportModal({ open: true, data: exportData });
 		} catch {
-			toast.error("Export failed");
+			toast.error(t("formsList.toastExportError"));
 		}
 	};
 
@@ -566,6 +572,16 @@ export function FormsList({
 					</>
 				)}
 			</Card>
+
+			{exportModal.open && exportModal.data && (
+				<JSONModal
+					open={exportModal.open}
+					mode="export"
+					exportData={exportModal.data}
+					onClose={() => setExportModal({ open: false, data: null })}
+					onImportNew={() => {}}
+				/>
+			)}
 		</>
 	);
 }
