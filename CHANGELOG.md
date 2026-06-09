@@ -1,3 +1,11 @@
+# [1.0.0-rc.19](https://github.com/carteracredit/forms/compare/v1.0.0-rc.18...v1.0.0-rc.19) (2026-06-09)
+
+
+### Features
+
+* add JSON export functionality to FormDetail component ([84f5001](https://github.com/carteracredit/forms/commit/84f5001b1606f8f6fa6a6052d6ec42b65cb42900))
+* enhance form import functionality in FormEditor component ([f15df71](https://github.com/carteracredit/forms/commit/f15df71156a857798275b570fe72fa6674e04401))
+
 # [1.0.0-rc.18](https://github.com/carteracredit/forms/compare/v1.0.0-rc.17...v1.0.0-rc.18) (2026-06-09)
 
 
