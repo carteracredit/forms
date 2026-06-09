@@ -1596,7 +1596,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 							t("formsList.importSuccess").replace("{name}", created.name),
 						);
 						setShowJsonModal(false);
-						router.push(`/editor/${created.id}`);
+						router.push(`/${created.id}/editor`);
 					} catch {
 						toast.error(t("formsList.importError"));
 					}
