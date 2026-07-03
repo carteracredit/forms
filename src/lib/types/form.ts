@@ -23,6 +23,7 @@ export type FormFieldType =
 	| "date"
 	| "datetime"
 	| "time"
+	| "month"
 	| "number"
 	| "url"
 	| "password"
@@ -88,6 +89,10 @@ export interface FormField {
 		dateMin?: string;
 		/** Maximum date (ISO string) for date/datetime fields */
 		dateMax?: string;
+		/** Minimum month (YYYY-MM) for month picker field */
+		monthMin?: string;
+		/** Maximum month (YYYY-MM) for month picker field */
+		monthMax?: string;
 	};
 }
 

@@ -21,6 +21,7 @@ import {
 	Star,
 	CreditCard,
 	Calendar,
+	CalendarDays,
 	Clock,
 	AlignLeft,
 	ChevronDown,
@@ -667,6 +668,44 @@ export function FieldShowcase() {
 				formatted: "string",
 			},
 			example: "March 15, 2024 or 2024-03-15",
+		},
+		{
+			type: "month",
+			name: t("fieldTypes.month"),
+			icon: <CalendarDays className="h-5 w-5" />,
+			description: t("fieldLibrary.monthFieldDesc"),
+			properties: [
+				{
+					name: "label",
+					type: "string",
+					description: t("fieldLibrary.displayLabel"),
+					required: true,
+				},
+				{
+					name: "required",
+					type: "boolean",
+					description: t("fieldLibrary.fieldRequired"),
+				},
+				{
+					name: "monthMin",
+					type: "string",
+					description: t("fieldLibrary.earliestSelectableMonth"),
+				},
+				{
+					name: "monthMax",
+					type: "string",
+					description: t("fieldLibrary.latestSelectableMonth"),
+				},
+			],
+			features: [
+				t("fieldLibrary.shadcnMonthPicker"),
+				t("fieldLibrary.minMaxMonthConstraints"),
+				t("fieldLibrary.yearNavigation"),
+				t("fieldLibrary.monthGridSelection"),
+			],
+			inputSchema: { month: "2024-03" },
+			outputSchema: { month: "string (YYYY-MM)" },
+			example: "March 2024 or 2024-03",
 		},
 		{
 			type: "time",

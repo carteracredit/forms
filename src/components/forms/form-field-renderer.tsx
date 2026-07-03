@@ -20,6 +20,7 @@ import { CardInput } from "@/components/forms/card-input";
 import { NameInput } from "@/components/forms/name-input";
 import { Star } from "lucide-react";
 import { useState } from "react";
+import { MonthPicker } from "@/components/ui/month-picker";
 
 interface FormFieldRendererProps {
 	field: FormField;
@@ -536,6 +537,25 @@ export function FormFieldRenderer({
 						className={inputClass}
 						min={field.properties?.dateMin}
 						max={field.properties?.dateMax}
+					/>
+				</div>
+			);
+
+		case "month":
+			return (
+				<div className="space-y-2">
+					<Label className={labelClass}>
+						{fieldLabel}
+						{field.required && <span className="text-destructive ml-1">*</span>}
+					</Label>
+					<MonthPicker
+						value={value || ""}
+						onChange={(val) => onChange(field.id, val)}
+						min={field.properties?.monthMin}
+						max={field.properties?.monthMax}
+						disabled={false}
+						required={field.required}
+						placeholder={fieldPlaceholder}
 					/>
 				</div>
 			);
