@@ -68,6 +68,7 @@ import {
 	Circle,
 	ListChecks,
 	Calendar,
+	CalendarDays,
 	Clock,
 	Hash,
 	Link,
@@ -83,6 +84,7 @@ import {
 	RefreshCw,
 	Loader2,
 } from "lucide-react";
+import { MonthPicker } from "@/components/ui/month-picker";
 import { toast } from "sonner";
 
 function getFieldTypes(t: (key: string) => string): {
@@ -101,6 +103,7 @@ function getFieldTypes(t: (key: string) => string): {
 		{ value: "password", label: t("fieldTypes.password"), icon: Lock },
 		{ value: "dropdown", label: t("fieldTypes.dropdown"), icon: ChevronDown },
 		{ value: "date", label: t("fieldTypes.date"), icon: Calendar },
+		{ value: "month", label: t("fieldTypes.month"), icon: CalendarDays },
 		{ value: "time", label: t("fieldTypes.time"), icon: Clock },
 		{ value: "datetime", label: t("fieldTypes.datetime"), icon: Clock },
 		{ value: "rating", label: t("fieldTypes.rating"), icon: Star },
@@ -193,6 +196,10 @@ function getFieldSchemaPreview(field: FormField): {
 			input.date = "YYYY-MM-DD";
 			output.date = "string (ISO)";
 			break;
+		case "month":
+			input.month = "YYYY-MM";
+			output.month = "string (YYYY-MM)";
+			break;
 		case "time":
 			input.time = "HH:mm";
 			output.time = "string";
@@ -246,6 +253,10 @@ function getFieldPropertyBadges(field: FormField): string[] {
 	if (field.properties?.dateMin)
 		badges.push(`from: ${field.properties.dateMin}`);
 	if (field.properties?.dateMax) badges.push(`to: ${field.properties.dateMax}`);
+	if (field.properties?.monthMin)
+		badges.push(`from: ${field.properties.monthMin}`);
+	if (field.properties?.monthMax)
+		badges.push(`to: ${field.properties.monthMax}`);
 	if (field.properties?.includeMiddleName) badges.push("middle name");
 	if (field.properties?.enableAutocomplete === false)
 		badges.push("no autocomplete");
@@ -309,6 +320,9 @@ export function FormEditor({ formId }: FormEditorProps) {
 	// Type-specific: date/datetime
 	const [newFieldDateMin, setNewFieldDateMin] = useState("");
 	const [newFieldDateMax, setNewFieldDateMax] = useState("");
+	// Type-specific: month
+	const [newFieldMonthMin, setNewFieldMonthMin] = useState("");
+	const [newFieldMonthMax, setNewFieldMonthMax] = useState("");
 	// Type-specific: time
 	const [newFieldTimeStep, setNewFieldTimeStep] = useState<number | "">("");
 	// Type-specific: name
@@ -491,6 +505,8 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldMaxFileSize("");
 		setNewFieldDateMin("");
 		setNewFieldDateMax("");
+		setNewFieldMonthMin("");
+		setNewFieldMonthMax("");
 		setNewFieldTimeStep("");
 		setNewFieldIncludeMiddleName(false);
 		setNewFieldEnableAddressAutocomplete(true);
@@ -564,6 +580,10 @@ export function FormEditor({ formId }: FormEditorProps) {
 			if (newFieldDateMin.trim()) properties.dateMin = newFieldDateMin;
 			if (newFieldDateMax.trim()) properties.dateMax = newFieldDateMax;
 		}
+		if (newFieldType === "month") {
+			if (newFieldMonthMin.trim()) properties.monthMin = newFieldMonthMin;
+			if (newFieldMonthMax.trim()) properties.monthMax = newFieldMonthMax;
+		}
 		if (newFieldType === "time" && newFieldTimeStep !== "") {
 			validation.step = Number(newFieldTimeStep);
 		}
@@ -633,6 +653,8 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldMaxFileSize(field.properties?.maxFileSize ?? "");
 		setNewFieldDateMin(field.properties?.dateMin ?? "");
 		setNewFieldDateMax(field.properties?.dateMax ?? "");
+		setNewFieldMonthMin(field.properties?.monthMin ?? "");
+		setNewFieldMonthMax(field.properties?.monthMax ?? "");
 		setNewFieldTimeStep(
 			field.type === "time" ? (field.validation?.step ?? "") : "",
 		);
@@ -1051,6 +1073,27 @@ export function FormEditor({ formId }: FormEditorProps) {
 							type="date"
 							value={newFieldDateMax}
 							onChange={(e) => setNewFieldDateMax(e.target.value)}
+							className="mt-1"
+						/>
+					</div>
+				</div>
+			)}
+
+			{newFieldType === "month" && (
+				<div className="grid grid-cols-2 gap-2">
+					<div>
+						<Label>{t("fieldProperties.min")}</Label>
+						<MonthPicker
+							value={newFieldMonthMin}
+							onChange={setNewFieldMonthMin}
+							className="mt-1"
+						/>
+					</div>
+					<div>
+						<Label>{t("fieldProperties.max")}</Label>
+						<MonthPicker
+							value={newFieldMonthMax}
+							onChange={setNewFieldMonthMax}
 							className="mt-1"
 						/>
 					</div>

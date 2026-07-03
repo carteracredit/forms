@@ -327,4 +327,38 @@ describe("validateFields", () => {
 		expect(result[0].labelEs).toBe("Completo");
 		expect(result[0].validation?.minLength).toBe(2);
 	});
+
+	it("accepts month field type with monthMin and monthMax", () => {
+		const fields = [
+			{
+				id: "f1",
+				type: "month" as const,
+				label: "Start Month",
+				required: true,
+				properties: { monthMin: "2024-01", monthMax: "2024-12" },
+			},
+		];
+		const result = validateFields(fields);
+		expect(result[0].type).toBe("month");
+		expect(result[0].properties?.monthMin).toBe("2024-01");
+		expect(result[0].properties?.monthMax).toBe("2024-12");
+	});
+});
+
+describe("parseFormImport – month field", () => {
+	it("round-trips a month field with monthMin/monthMax", () => {
+		const monthField: FormField = {
+			id: "f1",
+			type: "month",
+			label: "Start Month",
+			required: true,
+			properties: { monthMin: "2024-01", monthMax: "2024-12" },
+		};
+		const exported = serializeForm(sampleForm, [monthField]);
+		const json = JSON.stringify(exported);
+		const parsed = parseFormImport(json);
+		expect(parsed.fields[0].type).toBe("month");
+		expect(parsed.fields[0].properties?.monthMin).toBe("2024-01");
+		expect(parsed.fields[0].properties?.monthMax).toBe("2024-12");
+	});
 });

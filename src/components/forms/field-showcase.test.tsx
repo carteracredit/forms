@@ -11,7 +11,7 @@ vi.mock("@/components/LanguageProvider", () => ({
 	}),
 }));
 
-// FieldShowcase renders 18 cards with Radix Tabs; jsdom runs can exceed 5s on CI.
+// FieldShowcase renders 19 cards with Radix Tabs; jsdom runs can exceed 5s on CI.
 describe("FieldShowcase", { timeout: 20_000 }, () => {
 	afterEach(() => {
 		cleanup();
@@ -23,7 +23,7 @@ describe("FieldShowcase", { timeout: 20_000 }, () => {
 		expect(container).toHaveTextContent("fieldLibrary.description");
 	});
 
-	it("renders all 18 field type cards", () => {
+	it("renders all 19 field type cards", () => {
 		const { container } = render(<FieldShowcase />);
 		const fieldTypes = [
 			"name",
@@ -41,6 +41,7 @@ describe("FieldShowcase", { timeout: 20_000 }, () => {
 			"radio",
 			"checkbox-group",
 			"date",
+			"month",
 			"time",
 			"datetime",
 			"rating",

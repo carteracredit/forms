@@ -15,6 +15,7 @@ export const FORM_FIELD_TYPES = [
 	"date",
 	"datetime",
 	"time",
+	"month",
 	"number",
 	"url",
 	"password",
@@ -48,6 +49,8 @@ const formFieldPropertiesSchema = z
 		requireHolderName: z.boolean().optional(),
 		dateMin: z.string().optional(),
 		dateMax: z.string().optional(),
+		monthMin: z.string().optional(),
+		monthMax: z.string().optional(),
 	})
 	.optional();
 

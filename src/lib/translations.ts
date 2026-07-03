@@ -264,6 +264,7 @@ export const translations = {
 			password: "Password",
 			dropdown: "Dropdown",
 			date: "Date",
+			month: "Month Picker",
 			time: "Time",
 			datetime: "Date & Time",
 			rating: "Rating",
@@ -334,6 +335,8 @@ export const translations = {
 				"Multiple selection from options displayed as checkboxes",
 			dateFieldDesc:
 				"Date selector with calendar picker and date range constraints",
+			monthFieldDesc:
+				"Month and year selector with shadcn popover picker and month range constraints",
 			timeFieldDesc: "Time selector with hour and minute selection",
 			datetimeFieldDesc:
 				"Combined date and time selection with timezone support",
@@ -380,6 +383,8 @@ export const translations = {
 			choices: "Available option choices",
 			earliestSelectableDate: "Earliest date that can be selected",
 			latestSelectableDate: "Latest date that can be selected",
+			earliestSelectableMonth: "Earliest month that can be selected (YYYY-MM)",
+			latestSelectableMonth: "Latest month that can be selected (YYYY-MM)",
 			timeInterval: "Time interval in minutes",
 			earliestSelectableDatetime: "Earliest datetime that can be selected",
 			latestSelectableDatetime: "Latest datetime that can be selected",
@@ -445,6 +450,10 @@ export const translations = {
 			minMaxSelectionLimits: "Min/max selection count limits",
 			nativeDatePicker: "Native date picker interface",
 			minMaxDateConstraints: "Min/max date constraints",
+			shadcnMonthPicker: "shadcn popover month picker",
+			minMaxMonthConstraints: "Min/max month constraints (YYYY-MM)",
+			yearNavigation: "Year navigation with prev/next arrows",
+			monthGridSelection: "3×4 month grid selection",
 			localeAwareFormatting: "Locale-aware date formatting",
 			keyboardShortcuts: "Keyboard shortcuts for navigation",
 			iso8601Output: "ISO 8601 format output",
@@ -911,6 +920,7 @@ export const translations = {
 			password: "Contraseña",
 			dropdown: "Desplegable",
 			date: "Fecha",
+			month: "Selector de Mes",
 			time: "Hora",
 			datetime: "Fecha y Hora",
 			rating: "Calificación",
@@ -988,6 +998,8 @@ export const translations = {
 				"Selección múltiple de opciones mostradas como casillas de verificación",
 			dateFieldDesc:
 				"Selector de fecha con selector de calendario y restricciones de rango de fechas",
+			monthFieldDesc:
+				"Selector de mes y año con picker shadcn en popover y restricciones de rango de meses",
 			timeFieldDesc: "Selector de tiempo con selección de hora y minuto",
 			datetimeFieldDesc:
 				"Selección combinada de fecha y hora con soporte de zona horaria",
@@ -1037,6 +1049,8 @@ export const translations = {
 			choices: "Opciones disponibles",
 			earliestSelectableDate: "Fecha más temprana seleccionable",
 			latestSelectableDate: "Fecha más reciente seleccionable",
+			earliestSelectableMonth: "Mes más temprano seleccionable (YYYY-MM)",
+			latestSelectableMonth: "Mes más reciente seleccionable (YYYY-MM)",
 			timeInterval: "Intervalo de tiempo en minutos",
 			earliestSelectableDatetime: "Fecha y hora más temprana seleccionable",
 			latestSelectableDatetime: "Fecha y hora más reciente seleccionable",
@@ -1102,6 +1116,10 @@ export const translations = {
 			minMaxSelectionLimits: "Límites de cantidad de selección",
 			nativeDatePicker: "Selector de fecha nativo",
 			minMaxDateConstraints: "Restricciones de fecha mín/máx",
+			shadcnMonthPicker: "Selector de mes con popover shadcn",
+			minMaxMonthConstraints: "Restricciones de mes mín/máx (YYYY-MM)",
+			yearNavigation: "Navegación de año con flechas anterior/siguiente",
+			monthGridSelection: "Selección en grilla 3×4 de meses",
 			localeAwareFormatting: "Formato de fecha según locale",
 			keyboardShortcuts: "Atajos de teclado para navegación",
 			iso8601Output: "Salida en formato ISO 8601",
