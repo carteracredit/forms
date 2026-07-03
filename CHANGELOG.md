@@ -1,3 +1,10 @@
+# [1.0.0-rc.20](https://github.com/carteracredit/forms/compare/v1.0.0-rc.19...v1.0.0-rc.20) (2026-07-03)
+
+
+### Features
+
+* add month field type with picker component ([03eac10](https://github.com/carteracredit/forms/commit/03eac10a687019a44d2b01a8a9191cae04669601))
+
 # [1.0.0-rc.19](https://github.com/carteracredit/forms/compare/v1.0.0-rc.18...v1.0.0-rc.19) (2026-06-09)
 
 
