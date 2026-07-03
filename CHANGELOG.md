@@ -1,3 +1,10 @@
+# [1.0.0-rc.21](https://github.com/carteracredit/forms/compare/v1.0.0-rc.20...v1.0.0-rc.21) (2026-07-03)
+
+
+### Features
+
+* enhance middleware with admin permissions handling ([9354c05](https://github.com/carteracredit/forms/commit/9354c054c93bcd3e7904a9314375571f1e898b02))
+
 # [1.0.0-rc.20](https://github.com/carteracredit/forms/compare/v1.0.0-rc.19...v1.0.0-rc.20) (2026-07-03)
 
 
