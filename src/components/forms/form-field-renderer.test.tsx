@@ -3,12 +3,11 @@ import { render, fireEvent } from "@testing-library/react";
 import { FormFieldRenderer } from "./form-field-renderer";
 import type { FormField } from "@/lib/types/form";
 
-// Mock LanguageProvider
 vi.mock("@/components/LanguageProvider", () => ({
 	useLanguage: () => ({
 		t: (key: string) => key,
 		language: "en",
-		getFieldLabel: (en: string) => en,
+		getFieldLabel: (en: string, es?: string) => (es ? es : en),
 		getFieldPlaceholder: (en?: string) => en || "",
 	}),
 }));
@@ -46,6 +45,29 @@ vi.mock("@/components/forms/address-input", () => ({
 			data-testid="address-input"
 			value={typeof value === "string" ? value : ""}
 			onChange={(e) => onChange(e.target.value)}
+		/>
+	),
+}));
+
+// Mock MonthPicker
+vi.mock("@/components/ui/month-picker", () => ({
+	MonthPicker: ({
+		value,
+		onChange,
+		min,
+		max,
+	}: {
+		value?: string;
+		onChange?: (v: string) => void;
+		min?: string;
+		max?: string;
+	}) => (
+		<input
+			data-testid="month-picker"
+			value={value || ""}
+			data-min={min}
+			data-max={max}
+			onChange={(e) => onChange?.(e.target.value)}
 		/>
 	),
 }));
@@ -285,6 +307,115 @@ describe("FormFieldRenderer", () => {
 		);
 
 		expect(container).toHaveTextContent("*");
+	});
+
+	it("renders radio option labels from optionsEs with fallback to options", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "radio",
+			options: ["Red", "Blue"],
+			optionsEs: ["Rojo", ""],
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		expect(container).toHaveTextContent("Rojo");
+		expect(container).toHaveTextContent("Blue");
+	});
+
+	it("keeps english value on radio change even when optionsEs is shown", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "radio",
+			options: ["Red", "Blue"],
+			optionsEs: ["Rojo", "Azul"],
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		const radios = container.querySelectorAll('[role="radio"]');
+		fireEvent.click(radios[0]);
+		expect(onChange).toHaveBeenCalledWith("test-field", "Red");
+	});
+
+	it("renders checkbox-group labels from optionsEs with fallback", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "checkbox-group",
+			options: ["Red", "Blue", "Green"],
+			optionsEs: ["Rojo", "Azul"],
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value={[]} onChange={onChange} />,
+		);
+
+		expect(container).toHaveTextContent("Rojo");
+		expect(container).toHaveTextContent("Azul");
+		expect(container).toHaveTextContent("Green");
+	});
+
+	it("renders dropdown option labels from optionsEs with fallback", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "dropdown",
+			options: ["Red", "Blue"],
+			optionsEs: ["Rojo", "Azul"],
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		expect(container.querySelector('[role="combobox"]')).toBeInTheDocument();
+	});
+
+	it("should render month picker for month type", () => {
+		const onChange = vi.fn();
+		const field = createField({ type: "month" });
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		expect(
+			container.querySelector('[data-testid="month-picker"]'),
+		).toBeInTheDocument();
+	});
+
+	it("should pass monthMin and monthMax to month picker", () => {
+		const onChange = vi.fn();
+		const field = createField({
+			type: "month",
+			properties: { monthMin: "2024-01", monthMax: "2024-12" },
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		const picker = container.querySelector('[data-testid="month-picker"]');
+		expect(picker).toHaveAttribute("data-min", "2024-01");
+		expect(picker).toHaveAttribute("data-max", "2024-12");
+	});
+
+	it("should call onChange when month picker changes", () => {
+		const onChange = vi.fn();
+		const field = createField({ type: "month" });
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		const picker = container.querySelector(
+			'[data-testid="month-picker"]',
+		) as HTMLInputElement;
+		fireEvent.change(picker, { target: { value: "2024-03" } });
+		expect(onChange).toHaveBeenCalledWith("test-field", "2024-03");
 	});
 
 	it("should return null for unknown field type", () => {

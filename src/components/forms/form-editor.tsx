@@ -29,6 +29,12 @@ import {
 	DialogFooter,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import {
 	Collapsible,
@@ -36,8 +42,12 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { FormFieldRenderer } from "@/components/forms/form-field-renderer";
+import { JSONModal } from "@/components/forms/json-modal";
 import { SessionControls } from "@/components/SessionControls";
 import { computeFieldsChecksum } from "@/lib/checksum";
+import { serializeForm } from "@/lib/forms/io";
+import { importFormAction } from "@/lib/api/forms-actions";
+import type { FormExport } from "@/lib/forms/form-export-schema";
 import {
 	ArrowLeft,
 	Plus,
@@ -46,6 +56,8 @@ import {
 	Save,
 	Eye,
 	EyeOff,
+	Download,
+	MoreVertical,
 	User,
 	Phone,
 	Mail,
@@ -56,11 +68,13 @@ import {
 	Circle,
 	ListChecks,
 	Calendar,
+	CalendarDays,
 	Clock,
 	Hash,
 	Link,
 	Lock,
 	Star,
+	CreditCard,
 	AlignLeft,
 	ChevronDown,
 	ChevronRight,
@@ -70,6 +84,7 @@ import {
 	RefreshCw,
 	Loader2,
 } from "lucide-react";
+import { MonthPicker } from "@/components/ui/month-picker";
 import { toast } from "sonner";
 
 function getFieldTypes(t: (key: string) => string): {
@@ -88,9 +103,11 @@ function getFieldTypes(t: (key: string) => string): {
 		{ value: "password", label: t("fieldTypes.password"), icon: Lock },
 		{ value: "dropdown", label: t("fieldTypes.dropdown"), icon: ChevronDown },
 		{ value: "date", label: t("fieldTypes.date"), icon: Calendar },
+		{ value: "month", label: t("fieldTypes.month"), icon: CalendarDays },
 		{ value: "time", label: t("fieldTypes.time"), icon: Clock },
 		{ value: "datetime", label: t("fieldTypes.datetime"), icon: Clock },
 		{ value: "rating", label: t("fieldTypes.rating"), icon: Star },
+		{ value: "card", label: t("fieldTypes.card"), icon: CreditCard },
 		{ value: "address", label: t("fieldTypes.address"), icon: MapPin },
 		{ value: "file", label: t("fieldTypes.file"), icon: Upload },
 		{ value: "checkbox", label: t("fieldTypes.checkbox"), icon: CheckSquare },
@@ -179,6 +196,10 @@ function getFieldSchemaPreview(field: FormField): {
 			input.date = "YYYY-MM-DD";
 			output.date = "string (ISO)";
 			break;
+		case "month":
+			input.month = "YYYY-MM";
+			output.month = "string (YYYY-MM)";
+			break;
 		case "time":
 			input.time = "HH:mm";
 			output.time = "string";
@@ -190,6 +211,15 @@ function getFieldSchemaPreview(field: FormField): {
 		case "rating":
 			input.rating = 0;
 			output.rating = "number";
+			break;
+		case "card":
+			output.tokenId = "string";
+			output.brand = "string";
+			output.last4 = "string";
+			output.expMonth = "number";
+			output.expYear = "number";
+			output.masked = "string";
+			output.holderName = "string (optional)";
 			break;
 		default:
 			output.value = "unknown";
@@ -223,7 +253,17 @@ function getFieldPropertyBadges(field: FormField): string[] {
 	if (field.properties?.dateMin)
 		badges.push(`from: ${field.properties.dateMin}`);
 	if (field.properties?.dateMax) badges.push(`to: ${field.properties.dateMax}`);
+	if (field.properties?.monthMin)
+		badges.push(`from: ${field.properties.monthMin}`);
+	if (field.properties?.monthMax)
+		badges.push(`to: ${field.properties.monthMax}`);
 	if (field.properties?.includeMiddleName) badges.push("middle name");
+	if (field.properties?.enableAutocomplete === false)
+		badges.push("no autocomplete");
+	if (field.properties?.enableUspsValidation) badges.push("USPS validate");
+	if (field.properties?.acceptedBrands?.length)
+		badges.push(`cards: ${field.properties.acceptedBrands.join(",")}`);
+	if (field.properties?.requireHolderName) badges.push("card name");
 	return badges;
 }
 
@@ -239,7 +279,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 		const state = useFormStore.getState();
 		return !(state.isEditing && state.selectedForm?.id === formId);
 	});
-	const { t } = useLanguage();
+	const { t, getFieldLabel } = useLanguage();
 	const fieldTypes = getFieldTypes(t);
 	const [fields, setFields] = useState<FormField[]>([]);
 	const [showAddField, setShowAddField] = useState(false);
@@ -258,6 +298,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 	const [newFieldPlaceholderEs, setNewFieldPlaceholderEs] = useState("");
 	const [newFieldRequired, setNewFieldRequired] = useState(false);
 	const [newFieldOptions, setNewFieldOptions] = useState("");
+	const [newFieldOptionsEs, setNewFieldOptionsEs] = useState("");
 	// Type-specific: password
 	const [newFieldMinLength, setNewFieldMinLength] = useState<number | "">("");
 	const [newFieldShowStrength, setNewFieldShowStrength] = useState(false);
@@ -279,10 +320,25 @@ export function FormEditor({ formId }: FormEditorProps) {
 	// Type-specific: date/datetime
 	const [newFieldDateMin, setNewFieldDateMin] = useState("");
 	const [newFieldDateMax, setNewFieldDateMax] = useState("");
+	// Type-specific: month
+	const [newFieldMonthMin, setNewFieldMonthMin] = useState("");
+	const [newFieldMonthMax, setNewFieldMonthMax] = useState("");
 	// Type-specific: time
 	const [newFieldTimeStep, setNewFieldTimeStep] = useState<number | "">("");
 	// Type-specific: name
 	const [newFieldIncludeMiddleName, setNewFieldIncludeMiddleName] =
+		useState(false);
+	// Type-specific: address
+	const [
+		newFieldEnableAddressAutocomplete,
+		setNewFieldEnableAddressAutocomplete,
+	] = useState(true);
+	const [newFieldEnableUspsValidation, setNewFieldEnableUspsValidation] =
+		useState(false);
+	// Type-specific: card
+	const [newFieldAcceptedCardBrands, setNewFieldAcceptedCardBrands] =
+		useState("");
+	const [newFieldRequireHolderName, setNewFieldRequireHolderName] =
 		useState(false);
 
 	// Edit field state
@@ -301,6 +357,12 @@ export function FormEditor({ formId }: FormEditorProps) {
 	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 	const [isSavingAndLeaving, setIsSavingAndLeaving] = useState(false);
 	const pendingNavigationRef = useRef<string | null>(null);
+
+	// JSON export/import
+	const [showJsonModal, setShowJsonModal] = useState(false);
+	const [jsonModalMode, setJsonModalMode] = useState<"export" | "import">(
+		"export",
+	);
 
 	const savedFieldsRef = useRef<string>("");
 
@@ -429,6 +491,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldPlaceholderEs("");
 		setNewFieldRequired(false);
 		setNewFieldOptions("");
+		setNewFieldOptionsEs("");
 		setNewFieldMinLength("");
 		setNewFieldShowStrength(false);
 		setNewFieldMin("");
@@ -442,11 +505,33 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldMaxFileSize("");
 		setNewFieldDateMin("");
 		setNewFieldDateMax("");
+		setNewFieldMonthMin("");
+		setNewFieldMonthMax("");
 		setNewFieldTimeStep("");
 		setNewFieldIncludeMiddleName(false);
+		setNewFieldEnableAddressAutocomplete(true);
+		setNewFieldEnableUspsValidation(false);
+		setNewFieldAcceptedCardBrands("");
+		setNewFieldRequireHolderName(false);
 	};
 
 	const buildFieldFromForm = (id: string, existing?: FormField): FormField => {
+		const isChoiceField = ["radio", "checkbox-group", "dropdown"].includes(
+			newFieldType,
+		);
+		const options =
+			isChoiceField && newFieldOptions
+				? newFieldOptions.split(",").map((o) => o.trim())
+				: undefined;
+
+		let optionsEs: string[] | undefined;
+		if (isChoiceField && options && newFieldOptionsEs.trim()) {
+			const parsed = newFieldOptionsEs.split(",").map((o) => o.trim());
+			const normalized = parsed.slice(0, options.length);
+			while (normalized.length < options.length) normalized.push("");
+			optionsEs = normalized.some((o) => o.length > 0) ? normalized : undefined;
+		}
+
 		const base: FormField = {
 			id,
 			type: newFieldType,
@@ -455,11 +540,8 @@ export function FormEditor({ formId }: FormEditorProps) {
 			placeholder: newFieldPlaceholder || undefined,
 			placeholderEs: newFieldPlaceholderEs.trim() || undefined,
 			required: newFieldRequired,
-			options:
-				["radio", "checkbox-group", "dropdown"].includes(newFieldType) &&
-				newFieldOptions
-					? newFieldOptions.split(",").map((o) => o.trim())
-					: undefined,
+			options,
+			optionsEs,
 		};
 
 		const validation: FormField["validation"] = {};
@@ -498,11 +580,28 @@ export function FormEditor({ formId }: FormEditorProps) {
 			if (newFieldDateMin.trim()) properties.dateMin = newFieldDateMin;
 			if (newFieldDateMax.trim()) properties.dateMax = newFieldDateMax;
 		}
+		if (newFieldType === "month") {
+			if (newFieldMonthMin.trim()) properties.monthMin = newFieldMonthMin;
+			if (newFieldMonthMax.trim()) properties.monthMax = newFieldMonthMax;
+		}
 		if (newFieldType === "time" && newFieldTimeStep !== "") {
 			validation.step = Number(newFieldTimeStep);
 		}
 		if (newFieldType === "name") {
 			properties.includeMiddleName = newFieldIncludeMiddleName;
+		}
+		if (newFieldType === "address") {
+			properties.enableAutocomplete = newFieldEnableAddressAutocomplete;
+			properties.enableUspsValidation = newFieldEnableUspsValidation;
+		}
+		if (newFieldType === "card") {
+			if (newFieldAcceptedCardBrands.trim()) {
+				properties.acceptedBrands = newFieldAcceptedCardBrands
+					.split(",")
+					.map((s) => s.trim().toLowerCase())
+					.filter(Boolean);
+			}
+			properties.requireHolderName = newFieldRequireHolderName;
 		}
 
 		if (Object.keys(validation).length > 0) base.validation = validation;
@@ -540,6 +639,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldPlaceholderEs(field.placeholderEs || "");
 		setNewFieldRequired(field.required || false);
 		setNewFieldOptions(field.options?.join(", ") || "");
+		setNewFieldOptionsEs(field.optionsEs?.join(", ") || "");
 		setNewFieldMinLength(field.validation?.minLength ?? "");
 		setNewFieldShowStrength(field.properties?.showStrength ?? false);
 		setNewFieldMin(field.validation?.min ?? "");
@@ -553,10 +653,22 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldMaxFileSize(field.properties?.maxFileSize ?? "");
 		setNewFieldDateMin(field.properties?.dateMin ?? "");
 		setNewFieldDateMax(field.properties?.dateMax ?? "");
+		setNewFieldMonthMin(field.properties?.monthMin ?? "");
+		setNewFieldMonthMax(field.properties?.monthMax ?? "");
 		setNewFieldTimeStep(
 			field.type === "time" ? (field.validation?.step ?? "") : "",
 		);
 		setNewFieldIncludeMiddleName(field.properties?.includeMiddleName ?? false);
+		setNewFieldEnableAddressAutocomplete(
+			field.properties?.enableAutocomplete !== false,
+		);
+		setNewFieldEnableUspsValidation(
+			field.properties?.enableUspsValidation === true,
+		);
+		setNewFieldAcceptedCardBrands(
+			field.properties?.acceptedBrands?.join(", ") ?? "",
+		);
+		setNewFieldRequireHolderName(field.properties?.requireHolderName ?? false);
 		setShowEditField(true);
 	};
 
@@ -714,15 +826,72 @@ export function FormEditor({ formId }: FormEditorProps) {
 				</div>
 			)}
 
+			{newFieldType === "address" && (
+				<>
+					<div className="flex items-center justify-between">
+						<Label>{t("fieldProperties.enableAddressAutocomplete")}</Label>
+						<Switch
+							checked={newFieldEnableAddressAutocomplete}
+							onCheckedChange={setNewFieldEnableAddressAutocomplete}
+						/>
+					</div>
+					<div className="flex items-center justify-between">
+						<Label>{t("fieldProperties.enableUspsValidation")}</Label>
+						<Switch
+							checked={newFieldEnableUspsValidation}
+							onCheckedChange={setNewFieldEnableUspsValidation}
+						/>
+					</div>
+				</>
+			)}
+
+			{newFieldType === "card" && (
+				<>
+					<div>
+						<Label>{t("fieldProperties.acceptedCardBrands")}</Label>
+						<Input
+							value={newFieldAcceptedCardBrands}
+							onChange={(e) => setNewFieldAcceptedCardBrands(e.target.value)}
+							placeholder="visa, mastercard, amex"
+							className="mt-1"
+						/>
+						<p className="text-[10px] text-muted-foreground mt-1">
+							{t("card.brandsHint")}
+						</p>
+					</div>
+					<div className="flex items-center justify-between">
+						<Label>{t("fieldProperties.requireHolderName")}</Label>
+						<Switch
+							checked={newFieldRequireHolderName}
+							onCheckedChange={setNewFieldRequireHolderName}
+						/>
+					</div>
+				</>
+			)}
+
 			{["radio", "checkbox-group", "dropdown"].includes(newFieldType) && (
 				<div>
 					<Label>{t("fieldProperties.optionsComma")}</Label>
-					<Input
-						value={newFieldOptions}
-						onChange={(e) => setNewFieldOptions(e.target.value)}
-						placeholder={t("fieldProperties.optionsPlaceholder")}
-						className="mt-1"
-					/>
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+						<Input
+							value={newFieldOptions}
+							onChange={(e) => setNewFieldOptions(e.target.value)}
+							placeholder={t("fieldProperties.optionsPlaceholder")}
+						/>
+						<Input
+							value={newFieldOptionsEs}
+							onChange={(e) => setNewFieldOptionsEs(e.target.value)}
+							placeholder={t("fieldProperties.optionsEsPlaceholder")}
+						/>
+					</div>
+					<div className="hidden sm:grid grid-cols-2 gap-2">
+						<span className="text-[10px] text-muted-foreground">
+							{t("formEditor.english")}
+						</span>
+						<span className="text-[10px] text-muted-foreground">
+							{t("formEditor.spanish")}
+						</span>
+					</div>
 				</div>
 			)}
 
@@ -910,6 +1079,27 @@ export function FormEditor({ formId }: FormEditorProps) {
 				</div>
 			)}
 
+			{newFieldType === "month" && (
+				<div className="grid grid-cols-2 gap-2">
+					<div>
+						<Label>{t("fieldProperties.min")}</Label>
+						<MonthPicker
+							value={newFieldMonthMin}
+							onChange={setNewFieldMonthMin}
+							className="mt-1"
+						/>
+					</div>
+					<div>
+						<Label>{t("fieldProperties.max")}</Label>
+						<MonthPicker
+							value={newFieldMonthMax}
+							onChange={setNewFieldMonthMax}
+							className="mt-1"
+						/>
+					</div>
+				</div>
+			)}
+
 			{newFieldType === "time" && (
 				<div>
 					<Label>{t("fieldProperties.step")}</Label>
@@ -990,7 +1180,7 @@ export function FormEditor({ formId }: FormEditorProps) {
 								{t("formEditor.editFields")}
 							</h1>
 							<p className="text-xs md:text-sm text-muted-foreground truncate">
-								{selectedForm.name}
+								{getFieldLabel(selectedForm.name, selectedForm.nameEs)}
 							</p>
 						</div>
 					</div>
@@ -1065,6 +1255,33 @@ export function FormEditor({ formId }: FormEditorProps) {
 									: t("formEditor.publish")}
 							</span>
 						</Button>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm" className="gap-0 px-2">
+									<MoreVertical className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem
+									onClick={() => {
+										setJsonModalMode("export");
+										setShowJsonModal(true);
+									}}
+								>
+									<Download className="h-4 w-4 mr-2" />
+									{t("formEditor.exportJson")}
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => {
+										setJsonModalMode("import");
+										setShowJsonModal(true);
+									}}
+								>
+									<Upload className="h-4 w-4 mr-2" />
+									{t("formEditor.importJson")}
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 						<SessionControls />
 					</div>
 				</div>
@@ -1399,6 +1616,40 @@ export function FormEditor({ formId }: FormEditorProps) {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* JSON Export/Import Modal */}
+			<JSONModal
+				open={showJsonModal}
+				onClose={() => setShowJsonModal(false)}
+				mode={jsonModalMode}
+				exportData={
+					jsonModalMode === "export"
+						? serializeForm(selectedForm, fields)
+						: undefined
+				}
+				allowReplace
+				onImportNew={async (data: FormExport) => {
+					try {
+						const created = await importFormAction({
+							metadata: data.metadata,
+							form: data.form,
+							fields: data.fields,
+						});
+						toast.success(
+							t("formsList.importSuccess").replace("{name}", created.name),
+						);
+						setShowJsonModal(false);
+						router.push(`/${created.id}/editor`);
+					} catch {
+						toast.error(t("formsList.importError"));
+					}
+				}}
+				onImportReplace={(data: FormExport) => {
+					setFields(data.fields as FormField[]);
+					toast.info(t("formEditor.importReplaced"));
+					setShowJsonModal(false);
+				}}
+			/>
 		</div>
 	);
 }

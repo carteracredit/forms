@@ -10,6 +10,9 @@ import { FormEditor } from "./form-editor";
 import type { FormField } from "@/lib/types/form";
 
 const mockPush = vi.fn();
+const mockImportFormAction = vi.fn();
+
+let capturedOnImportNew: ((data: unknown) => void) | null = null;
 
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({
@@ -41,6 +44,27 @@ vi.mock("sonner", () => ({
 		info: vi.fn(),
 		error: vi.fn(),
 		success: vi.fn(),
+	},
+}));
+
+vi.mock("@/lib/api/forms-actions", () => ({
+	importFormAction: (...args: unknown[]) => mockImportFormAction(...args),
+}));
+
+vi.mock("@/components/forms/json-modal", () => ({
+	JSONModal: ({
+		onImportNew,
+	}: {
+		open: boolean;
+		mode: string;
+		onClose: () => void;
+		onImportNew: (data: unknown) => void;
+		onImportReplace?: (data: unknown) => void;
+		allowReplace?: boolean;
+		exportData?: unknown;
+	}) => {
+		capturedOnImportNew = onImportNew;
+		return null;
 	},
 }));
 
@@ -232,6 +256,31 @@ describe("FormEditor", () => {
 		await waitFor(() => {
 			expect(mockStoreState.refreshForm).toHaveBeenCalledWith("form-1");
 			expect(mockStoreState.startEditing).toHaveBeenCalled();
+		});
+	});
+
+	it("navega a /{id}/editor después de 'Import as New' desde el editor", async () => {
+		capturedOnImportNew = null;
+		mockImportFormAction.mockResolvedValue({
+			id: "new-form-99",
+			name: "Imported",
+		});
+
+		render(<FormEditor formId="form-1" />);
+
+		// Abre el JSONModal activando el import (simulado via capturedOnImportNew)
+		await waitFor(() => {
+			expect(capturedOnImportNew).not.toBeNull();
+		});
+
+		await capturedOnImportNew!({
+			form: { name: "Imported" },
+			fields: [],
+			metadata: {},
+		});
+
+		await waitFor(() => {
+			expect(mockPush).toHaveBeenCalledWith("/new-form-99/editor");
 		});
 	});
 

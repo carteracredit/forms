@@ -112,12 +112,33 @@ describe("useFormStore", () => {
 			useFormStore.setState({ forms: [existingForm] });
 			vi.mocked(formsActions.createFormAction).mockResolvedValue(newForm);
 
-			await useFormStore.getState().createForm("New Form", "Description");
+			await useFormStore
+				.getState()
+				.createForm({ name: "New Form", description: "Description" });
 
 			const state = useFormStore.getState();
 			expect(state.forms).toHaveLength(2);
 			expect(state.forms[0].id).toBe("new");
 			expect(state.isLoading).toBe(false);
+		});
+
+		it("should propagate ES fields to the action payload", async () => {
+			const newForm = makeForm({ id: "new", name: "New Form" });
+			vi.mocked(formsActions.createFormAction).mockResolvedValue(newForm);
+
+			await useFormStore.getState().createForm({
+				name: "New Form",
+				nameEs: "Nuevo Formulario",
+				description: "Desc",
+				descriptionEs: "Desc ES",
+			});
+
+			expect(formsActions.createFormAction).toHaveBeenCalledWith({
+				name: "New Form",
+				name_es: "Nuevo Formulario",
+				description: "Desc",
+				description_es: "Desc ES",
+			});
 		});
 
 		it("should throw and set error on failure", async () => {
@@ -126,7 +147,9 @@ describe("useFormStore", () => {
 			);
 
 			await expect(
-				useFormStore.getState().createForm("Test", "Desc"),
+				useFormStore
+					.getState()
+					.createForm({ name: "Test", description: "Desc" }),
 			).rejects.toThrow("Create failed");
 
 			expect(useFormStore.getState().error).toBe("Create failed");
@@ -138,7 +161,9 @@ describe("useFormStore", () => {
 			);
 
 			await expect(
-				useFormStore.getState().createForm("Test", "Desc"),
+				useFormStore
+					.getState()
+					.createForm({ name: "Test", description: "Desc" }),
 			).rejects.toBe("string error");
 
 			expect(useFormStore.getState().error).toBe("Failed to create form");

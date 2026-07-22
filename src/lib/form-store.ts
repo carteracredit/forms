@@ -50,8 +50,12 @@ interface FormStore {
 	// Form CRUD actions
 	/** Create a new form */
 	createForm: (
-		name: string,
-		description: string,
+		payload: {
+			name: string;
+			nameEs?: string;
+			description?: string;
+			descriptionEs?: string;
+		},
 		options?: { jwt?: string },
 	) => Promise<Form>;
 	/** Update an existing form's metadata */
@@ -165,10 +169,15 @@ export const useFormStore = create<FormStore>((set, get) => ({
 		}
 	},
 
-	createForm: async (name, description, options) => {
+	createForm: async (payload, options) => {
 		set({ isLoading: true, error: null });
 		try {
-			const newForm = await createFormAction({ name, description });
+			const newForm = await createFormAction({
+				name: payload.name,
+				name_es: payload.nameEs,
+				description: payload.description,
+				description_es: payload.descriptionEs,
+			});
 			set({ forms: [newForm, ...get().forms], isLoading: false });
 			return newForm;
 		} catch (err) {

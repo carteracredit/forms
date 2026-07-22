@@ -31,6 +31,7 @@ import {
 	Plus,
 	Copy,
 	Loader2,
+	Download,
 } from "lucide-react";
 import {
 	DropdownMenu,
@@ -43,6 +44,10 @@ import { es, enUS } from "date-fns/locale";
 import type { Form } from "@/lib/types/form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { getFormAction } from "@/lib/api/forms-actions";
+import { serializeForm } from "@/lib/forms/io";
+import { JSONModal } from "@/components/forms/json-modal";
+import type { FormExport } from "@/lib/forms/form-export-schema";
 
 interface FormsListProps {
 	onViewForm: (formId: string) => void;
@@ -74,19 +79,23 @@ function FormCardRow({
 	onView,
 	onEdit,
 	onClone,
+	onExport,
 	onDelete,
 	cloningId,
 	t,
 	language,
+	getFieldLabel,
 }: {
 	form: Form;
 	onView: (id: string) => void;
 	onEdit: (id: string) => void;
 	onClone: (form: Form) => void;
+	onExport: (form: Form) => void;
 	onDelete: (id: string) => void;
 	cloningId: string | null;
 	t: (key: string) => string;
 	language: string;
+	getFieldLabel: (label: string, labelEs?: string) => string;
 }) {
 	const dateLocale = language === "es" ? es : enUS;
 	const isBusy = cloningId === form.id;
@@ -96,7 +105,9 @@ function FormCardRow({
 			onClick={() => onView(form.id)}
 		>
 			<div className="min-w-0 flex-1">
-				<p className="font-medium text-sm truncate">{form.name}</p>
+				<p className="font-medium text-sm truncate">
+					{getFieldLabel(form.name, form.nameEs)}
+				</p>
 				{form.tags.length > 0 && (
 					<div className="flex items-center gap-1 mt-0.5">
 						<Tag className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -153,6 +164,15 @@ function FormCardRow({
 						>
 							<Copy className="h-4 w-4 mr-2" />
 							{t("formsList.cloneForm")}
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={(e) => {
+								e.stopPropagation();
+								onExport(form);
+							}}
+						>
+							<Download className="h-4 w-4 mr-2" />
+							{t("formsList.exportJson")}
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							onClick={(e) => {
@@ -217,18 +237,27 @@ export function FormsList({
 	onCreateForm,
 }: FormsListProps) {
 	const { forms, deleteForm, cloneForm, isLoading } = useFormStore();
-	const { t, language } = useLanguage();
+	const { t, language, getFieldLabel } = useLanguage();
 	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 	const [cloningId, setCloningId] = useState<string | null>(null);
+	const [exportModal, setExportModal] = useState<{
+		open: boolean;
+		data: FormExport | null;
+	}>({ open: false, data: null });
 
 	const dateLocale = language === "es" ? es : enUS;
 
 	const filteredForms = forms.filter((form) => {
+		const displayName = getFieldLabel(form.name, form.nameEs).toLowerCase();
+		const displayDesc = getFieldLabel(
+			form.description,
+			form.descriptionEs,
+		).toLowerCase();
 		const matchesSearch =
-			form.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			form.description.toLowerCase().includes(searchQuery.toLowerCase());
+			displayName.includes(searchQuery.toLowerCase()) ||
+			displayDesc.includes(searchQuery.toLowerCase());
 		const matchesStatus =
 			statusFilter === "all" || form.status === statusFilter;
 		return matchesSearch && matchesStatus;
@@ -251,12 +280,27 @@ export function FormsList({
 		setCloningId(form.id);
 		try {
 			const cloned = await cloneForm(form.id);
-			toast.success(t("formsList.cloneSuccess").replace("{name}", form.name));
-			router.push(`/${cloned.id}`);
+			toast.success(
+				t("formsList.cloneSuccess").replace(
+					"{name}",
+					getFieldLabel(form.name, form.nameEs),
+				),
+			);
+			router.push(`/${cloned.id}/editor`);
 		} catch {
 			toast.error(t("formsList.cloneError"));
 		} finally {
 			setCloningId(null);
+		}
+	};
+
+	const handleExport = async (form: Form) => {
+		try {
+			const fullForm = await getFormAction(form.id);
+			const exportData = serializeForm(fullForm, fullForm.draftFields);
+			setExportModal({ open: true, data: exportData });
+		} catch {
+			toast.error(t("formsList.toastExportError"));
 		}
 	};
 
@@ -395,10 +439,12 @@ export function FormsList({
 									onView={onViewForm}
 									onEdit={onEditForm}
 									onClone={handleClone}
+									onExport={handleExport}
 									onDelete={handleDelete}
 									cloningId={cloningId}
 									t={t}
 									language={language}
+									getFieldLabel={getFieldLabel}
 								/>
 							))}
 						</div>
@@ -430,7 +476,7 @@ export function FormsList({
 											onClick={() => onViewForm(form.id)}
 										>
 											<TableCell className="font-medium">
-												{form.name}
+												{getFieldLabel(form.name, form.nameEs)}
 												{form.tags.length > 0 && (
 													<div className="flex items-center gap-1 mt-0.5">
 														<Tag className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -443,7 +489,10 @@ export function FormsList({
 												)}
 											</TableCell>
 											<TableCell className="hidden max-w-xs truncate text-muted-foreground sm:table-cell">
-												{form.description || (
+												{getFieldLabel(
+													form.description,
+													form.descriptionEs,
+												) || (
 													<span className="italic opacity-50">
 														{t("formsList.noDescription")}
 													</span>
@@ -500,6 +549,12 @@ export function FormsList({
 															{t("formsList.cloneForm")}
 														</DropdownMenuItem>
 														<DropdownMenuItem
+															onClick={() => handleExport(form)}
+														>
+															<Download className="mr-2 h-4 w-4" />
+															{t("formsList.exportJson")}
+														</DropdownMenuItem>
+														<DropdownMenuItem
 															onClick={() => handleDelete(form.id)}
 															className="text-destructive focus:text-destructive"
 														>
@@ -517,6 +572,16 @@ export function FormsList({
 					</>
 				)}
 			</Card>
+
+			{exportModal.open && exportModal.data && (
+				<JSONModal
+					open={exportModal.open}
+					mode="export"
+					exportData={exportModal.data}
+					onClose={() => setExportModal({ open: false, data: null })}
+					onImportNew={() => {}}
+				/>
+			)}
 		</>
 	);
 }

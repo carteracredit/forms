@@ -37,6 +37,11 @@ describe("translations", () => {
 			expect(translations.en.fieldTypes.name).toBe("Name Field");
 			expect(translations.es.fieldTypes.name).toBe("Campo de Nombre");
 		});
+
+		it("should have month field type translations in both languages", () => {
+			expect(translations.en.fieldTypes.month).toBe("Month Picker");
+			expect(translations.es.fieldTypes.month).toBe("Selector de Mes");
+		});
 	});
 
 	describe("getLocaleForLanguage", () => {

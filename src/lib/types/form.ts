@@ -23,10 +23,12 @@ export type FormFieldType =
 	| "date"
 	| "datetime"
 	| "time"
+	| "month"
 	| "number"
 	| "url"
 	| "password"
-	| "rating";
+	| "rating"
+	| "card";
 
 /**
  * Form field definition
@@ -48,6 +50,8 @@ export interface FormField {
 	required: boolean;
 	/** Options for select/radio/checkbox-group fields */
 	options?: string[];
+	/** Spanish labels for options (optional, parallel array to `options`) */
+	optionsEs?: string[];
 	/** Validation rules */
 	validation?: {
 		min?: number;
@@ -73,12 +77,22 @@ export interface FormField {
 		maxFileSize?: number;
 		/** Enable Google Places autocomplete for address */
 		enableAutocomplete?: boolean;
+		/** Run USPS Address API validation (ZIP→city/state still applies when ZIP is filled) */
+		enableUspsValidation?: boolean;
+		/** Allowed card brands when type is `card` (e.g. visa, mastercard). Omit = all supported */
+		acceptedBrands?: string[];
+		/** Require cardholder name for `card` fields */
+		requireHolderName?: boolean;
 		/** Include middle name sub-field in name field */
 		includeMiddleName?: boolean;
 		/** Minimum date (ISO string) for date/datetime fields */
 		dateMin?: string;
 		/** Maximum date (ISO string) for date/datetime fields */
 		dateMax?: string;
+		/** Minimum month (YYYY-MM) for month picker field */
+		monthMin?: string;
+		/** Maximum month (YYYY-MM) for month picker field */
+		monthMax?: string;
 	};
 }
 

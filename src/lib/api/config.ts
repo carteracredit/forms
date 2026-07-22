@@ -33,3 +33,13 @@ export const getWorkflowServiceUrl = (): string => {
 		"https://workflow-svc.carteracredit.workers.dev"
 	);
 };
+
+/**
+ * Base URL for cases-svc (card tokenization, etc.).
+ */
+export function getCasesServiceUrl(): string {
+	return (
+		process.env.NEXT_PUBLIC_CASES_SERVICE_URL ||
+		"https://cases-svc.carteracredit.workers.dev"
+	);
+}

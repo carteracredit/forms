@@ -107,6 +107,28 @@ export const translations = {
 			noDescription: "No description",
 			result: "result",
 			results: "results",
+			importJson: "Import JSON",
+			exportJson: "Export JSON",
+			toastExportError: "Error exporting form",
+			importSuccess: 'Form "{name}" imported successfully',
+			importError: "Error importing form",
+		},
+
+		// JSON Modal
+		jsonModal: {
+			exportTitle: "Export JSON",
+			importTitle: "Import JSON",
+			importPlaceholder: "Paste the form JSON here...",
+			cancel: "Cancel",
+			download: "Download",
+			import: "Import",
+			uploadFile: "Upload file",
+			modeNew: "Create new form",
+			modeReplace: "Replace current fields",
+			modeReplaceWarning:
+				"This will replace the current fields. Unsaved changes will be lost.",
+			errorParseJson: "Error parsing JSON",
+			errorInvalidKind: "Invalid format: this JSON is not a form definition",
 		},
 
 		// Form Status
@@ -123,6 +145,8 @@ export const translations = {
 			editForm: "Edit Form",
 			editFields: "Edit Fields",
 			editInfo: "Edit Info",
+			exportJson: "Export JSON",
+			toastExportError: "Error exporting form",
 			editFormInfo: "Edit Form Info",
 			goToEditor: "Go to field editor",
 			publish: "Publish",
@@ -184,6 +208,9 @@ export const translations = {
 			saveDraft: "Save Draft",
 			draftSaved: "Draft saved",
 			saveDraftError: "Failed to save draft",
+			exportJson: "Export JSON",
+			importJson: "Import JSON",
+			importReplaced: "Fields replaced from imported JSON",
 			publish: "Publish",
 			publishForm: "Publish Form",
 			publishConfirm:
@@ -237,10 +264,12 @@ export const translations = {
 			password: "Password",
 			dropdown: "Dropdown",
 			date: "Date",
+			month: "Month Picker",
 			time: "Time",
 			datetime: "Date & Time",
 			rating: "Rating",
 			address: "Address Field",
+			card: "Payment Card",
 			file: "File Upload",
 			checkbox: "Checkbox",
 			radio: "Radio Buttons",
@@ -263,7 +292,12 @@ export const translations = {
 			maxFileSize: "Max File Size (MB)",
 			optionsComma: "Options (comma separated)",
 			optionsPlaceholder: "Option 1, Option 2, Option 3",
+			optionsEsPlaceholder: "Spanish option 1, option 2 (optional)",
 			includeMiddleName: "Include Middle Name",
+			enableAddressAutocomplete: "Google Places autocomplete",
+			enableUspsValidation: "USPS address validation",
+			acceptedCardBrands: "Accepted card brands (visa, mastercard, amex, …)",
+			requireHolderName: "Require cardholder name",
 		},
 
 		// Field Library
@@ -285,7 +319,9 @@ export const translations = {
 			dropdownFieldDesc:
 				"Single-selection dropdown menu from predefined options",
 			addressFieldDesc:
-				"Structured address input with optional Google Places autocomplete",
+				"Structured US address with optional Google autocomplete and USPS validation",
+			cardFieldDesc:
+				"Card number, expiry, and CVC — saved as a secure token (PAN encrypted server-side)",
 			fileFieldDesc:
 				"File upload field with drag-and-drop support and file type validation",
 			fileUploadDesc:
@@ -299,10 +335,16 @@ export const translations = {
 				"Multiple selection from options displayed as checkboxes",
 			dateFieldDesc:
 				"Date selector with calendar picker and date range constraints",
+			monthFieldDesc:
+				"Month and year selector with shadcn popover picker and month range constraints",
 			timeFieldDesc: "Time selector with hour and minute selection",
 			datetimeFieldDesc:
 				"Combined date and time selection with timezone support",
 			ratingFieldDesc: "Star rating input with configurable maximum rating",
+			cardTokenization:
+				"Tokenizes via cases-svc — PAN encrypted at rest; CVC never stored",
+			cardFormatting: "Brand-aware spacing and validation (Visa, MC, Amex, …)",
+			cardValidation: "Luhn check, expiry, and CVC length before tokenization",
 			properties: "Properties",
 			features: "Features",
 			inputSchema: "Input Schema",
@@ -341,6 +383,8 @@ export const translations = {
 			choices: "Available option choices",
 			earliestSelectableDate: "Earliest date that can be selected",
 			latestSelectableDate: "Latest date that can be selected",
+			earliestSelectableMonth: "Earliest month that can be selected (YYYY-MM)",
+			latestSelectableMonth: "Latest month that can be selected (YYYY-MM)",
 			timeInterval: "Time interval in minutes",
 			earliestSelectableDatetime: "Earliest datetime that can be selected",
 			latestSelectableDatetime: "Latest datetime that can be selected",
@@ -406,6 +450,10 @@ export const translations = {
 			minMaxSelectionLimits: "Min/max selection count limits",
 			nativeDatePicker: "Native date picker interface",
 			minMaxDateConstraints: "Min/max date constraints",
+			shadcnMonthPicker: "shadcn popover month picker",
+			minMaxMonthConstraints: "Min/max month constraints (YYYY-MM)",
+			yearNavigation: "Year navigation with prev/next arrows",
+			monthGridSelection: "3×4 month grid selection",
 			localeAwareFormatting: "Locale-aware date formatting",
 			keyboardShortcuts: "Keyboard shortcuts for navigation",
 			iso8601Output: "ISO 8601 format output",
@@ -433,8 +481,10 @@ export const translations = {
 			subtitle: "Start building a new form for your workflow",
 			formName: "Form Name",
 			formNamePlaceholder: "e.g. Customer Feedback Form",
+			formNameEsPlaceholder: "Spanish name (optional)",
 			descriptionLabel: "Description",
 			descriptionPlaceholder: "Describe the purpose of this form...",
+			descriptionEsPlaceholder: "Spanish description (optional)",
 			duplicateName: "A form with this name already exists",
 		},
 
@@ -527,6 +577,23 @@ export const translations = {
 		address: {
 			autocomplete: "Address Autocomplete",
 			autocompleteDesc: "Use Google Places to find addresses quickly",
+			autocompleteUnavailable:
+				"Address suggestions are temporarily unavailable. You can keep typing.",
+			zipLookupFailed:
+				"ZIP lookup failed. Enter city and state manually if needed.",
+			placeLookupFailed: "Could not load place details. Try again.",
+			uspsSuggested: "USPS standardized address",
+			uspsUseSuggestion: "Use USPS suggestion",
+			uspsKeepMine: "Keep mine",
+			uspsUnavailable:
+				"USPS validation is temporarily unavailable. Your address was not verified.",
+			uspsValidated: "Address matches USPS records.",
+			uspsVerified: "Verified by USPS",
+			uspsApplied: "USPS suggestion applied.",
+			uspsValidate: "Validate with USPS",
+			uspsValidating: "Validating…",
+			uspsValidateHint:
+				"Uses USPS Address API when credentials are configured.",
 			street: "Street Address",
 			streetPlaceholder: "123 Main Street",
 			street2: "Apartment, suite, etc.",
@@ -539,6 +606,22 @@ export const translations = {
 			zipPlaceholder: "94102",
 			country: "Country",
 			countryPlaceholder: "United States",
+		},
+
+		// Card (tokenized; PAN/CVC never stored in forms backend)
+		card: {
+			number: "Card number",
+			expiry: "Expiry (MM/YY)",
+			cvc: "Security code",
+			holderName: "Name on card",
+			tokenize: "Save card securely",
+			tokenized: "Card saved",
+			replace: "Replace card",
+			invalidNumber: "Invalid card number",
+			expiredCard: "Card has expired",
+			invalidCvc: "Invalid security code",
+			tokenizeFailed: "Could not save card. Try again.",
+			brandsHint: "Accepted brands (comma-separated ISO codes)",
 		},
 
 		// Phone
@@ -675,6 +758,29 @@ export const translations = {
 			noDescription: "Sin descripción",
 			result: "resultado",
 			results: "resultados",
+			importJson: "Importar JSON",
+			exportJson: "Exportar JSON",
+			toastExportError: "Error al exportar el formulario",
+			importSuccess: 'Formulario "{name}" importado exitosamente',
+			importError: "Error al importar el formulario",
+		},
+
+		// JSON Modal
+		jsonModal: {
+			exportTitle: "Exportar JSON",
+			importTitle: "Importar JSON",
+			importPlaceholder: "Pega el JSON del formulario aquí...",
+			cancel: "Cancelar",
+			download: "Descargar",
+			import: "Importar",
+			uploadFile: "Subir archivo",
+			modeNew: "Crear formulario nuevo",
+			modeReplace: "Reemplazar campos actuales",
+			modeReplaceWarning:
+				"Esto reemplazará los campos actuales. Los cambios no guardados se perderán.",
+			errorParseJson: "Error al parsear JSON",
+			errorInvalidKind:
+				"Formato inválido: este JSON no es una definición de formulario",
 		},
 
 		// Form Status
@@ -691,6 +797,8 @@ export const translations = {
 			editForm: "Editar Formulario",
 			editFields: "Editar Campos",
 			editInfo: "Editar Info",
+			exportJson: "Exportar JSON",
+			toastExportError: "Error al exportar el formulario",
 			editFormInfo: "Editar Info del Formulario",
 			goToEditor: "Ir al editor de campos",
 			publish: "Publicar",
@@ -755,6 +863,9 @@ export const translations = {
 			saveDraft: "Guardar Borrador",
 			draftSaved: "Borrador guardado",
 			saveDraftError: "Error al guardar el borrador",
+			exportJson: "Exportar JSON",
+			importJson: "Importar JSON",
+			importReplaced: "Campos reemplazados desde el JSON importado",
 			publish: "Publicar",
 			publishForm: "Publicar Formulario",
 			publishConfirm:
@@ -809,10 +920,12 @@ export const translations = {
 			password: "Contraseña",
 			dropdown: "Desplegable",
 			date: "Fecha",
+			month: "Selector de Mes",
 			time: "Hora",
 			datetime: "Fecha y Hora",
 			rating: "Calificación",
 			address: "Campo de Dirección",
+			card: "Tarjeta de Pago",
 			file: "Carga de Archivo",
 			checkbox: "Casilla de Verificación",
 			radio: "Botones de Radio",
@@ -835,7 +948,13 @@ export const translations = {
 			maxFileSize: "Tamaño Máximo (MB)",
 			optionsComma: "Opciones (separadas por coma)",
 			optionsPlaceholder: "Opción 1, Opción 2, Opción 3",
+			optionsEsPlaceholder: "Opción 1 en español, Opción 2 (opcional)",
 			includeMiddleName: "Incluir Segundo Nombre",
+			enableAddressAutocomplete: "Autocompletado Google Places",
+			enableUspsValidation: "Validación de dirección USPS",
+			acceptedCardBrands:
+				"Marcas aceptadas (visa, mastercard, amex, … separadas por coma)",
+			requireHolderName: "Requerir nombre del titular",
 		},
 
 		// Field Library
@@ -862,7 +981,9 @@ export const translations = {
 			dropdownFieldDesc:
 				"Menú desplegable de selección única con opciones predefinidas",
 			addressFieldDesc:
-				"Entrada de dirección estructurada con autocompletado opcional de Google Places",
+				"Dirección estructurada (EE.UU.) con autocompletado Google y validación USPS opcional",
+			cardFieldDesc:
+				"Número, vencimiento y CVC — se guarda como token seguro (PAN cifrado en el servidor)",
 			fileFieldDesc:
 				"Campo de carga de archivos con soporte de arrastrar y soltar y validación de tipo de archivo",
 			fileUploadDesc:
@@ -877,11 +998,18 @@ export const translations = {
 				"Selección múltiple de opciones mostradas como casillas de verificación",
 			dateFieldDesc:
 				"Selector de fecha con selector de calendario y restricciones de rango de fechas",
+			monthFieldDesc:
+				"Selector de mes y año con picker shadcn en popover y restricciones de rango de meses",
 			timeFieldDesc: "Selector de tiempo con selección de hora y minuto",
 			datetimeFieldDesc:
 				"Selección combinada de fecha y hora con soporte de zona horaria",
 			ratingFieldDesc:
 				"Entrada de calificación por estrellas con calificación máxima configurable",
+			cardTokenization:
+				"Tokenización vía cases-svc — PAN cifrado en reposo; CVC nunca almacenado",
+			cardFormatting: "Espaciado y validación según marca (Visa, MC, Amex, …)",
+			cardValidation:
+				"Verificación Luhn, vencimiento y longitud de CVC antes de tokenizar",
 			properties: "Propiedades",
 			features: "Características",
 			inputSchema: "Esquema de Entrada",
@@ -921,6 +1049,8 @@ export const translations = {
 			choices: "Opciones disponibles",
 			earliestSelectableDate: "Fecha más temprana seleccionable",
 			latestSelectableDate: "Fecha más reciente seleccionable",
+			earliestSelectableMonth: "Mes más temprano seleccionable (YYYY-MM)",
+			latestSelectableMonth: "Mes más reciente seleccionable (YYYY-MM)",
 			timeInterval: "Intervalo de tiempo en minutos",
 			earliestSelectableDatetime: "Fecha y hora más temprana seleccionable",
 			latestSelectableDatetime: "Fecha y hora más reciente seleccionable",
@@ -986,6 +1116,10 @@ export const translations = {
 			minMaxSelectionLimits: "Límites de cantidad de selección",
 			nativeDatePicker: "Selector de fecha nativo",
 			minMaxDateConstraints: "Restricciones de fecha mín/máx",
+			shadcnMonthPicker: "Selector de mes con popover shadcn",
+			minMaxMonthConstraints: "Restricciones de mes mín/máx (YYYY-MM)",
+			yearNavigation: "Navegación de año con flechas anterior/siguiente",
+			monthGridSelection: "Selección en grilla 3×4 de meses",
 			localeAwareFormatting: "Formato de fecha según locale",
 			keyboardShortcuts: "Atajos de teclado para navegación",
 			iso8601Output: "Salida en formato ISO 8601",
@@ -1014,8 +1148,10 @@ export const translations = {
 				"Comienza a construir un nuevo formulario para tu flujo de trabajo",
 			formName: "Nombre del Formulario",
 			formNamePlaceholder: "ej. Formulario de Comentarios del Cliente",
+			formNameEsPlaceholder: "Nombre en español (opcional)",
 			descriptionLabel: "Descripción",
 			descriptionPlaceholder: "Describe el propósito de este formulario...",
+			descriptionEsPlaceholder: "Descripción en español (opcional)",
 			duplicateName: "Ya existe un formulario con este nombre",
 		},
 
@@ -1110,6 +1246,23 @@ export const translations = {
 			autocomplete: "Autocompletado de Dirección",
 			autocompleteDesc:
 				"Usa Google Places para encontrar direcciones rápidamente",
+			autocompleteUnavailable:
+				"Las sugerencias no están disponibles. Puede seguir escribiendo.",
+			zipLookupFailed:
+				"No se pudo obtener ciudad/estado desde el código postal.",
+			placeLookupFailed: "No se pudieron cargar los datos del lugar.",
+			uspsSuggested: "Dirección estandarizada USPS",
+			uspsUseSuggestion: "Usar sugerencia USPS",
+			uspsKeepMine: "Dejar la mía",
+			uspsUnavailable:
+				"Validación USPS no disponible. La dirección no fue verificada.",
+			uspsValidated: "La dirección coincide con USPS.",
+			uspsVerified: "Verificada por USPS",
+			uspsApplied: "Sugerencia USPS aplicada.",
+			uspsValidate: "Validar con USPS",
+			uspsValidating: "Validando…",
+			uspsValidateHint:
+				"Usa la API de USPS cuando las credenciales están configuradas.",
 			street: "Dirección",
 			streetPlaceholder: "Calle Principal 123",
 			street2: "Apartamento, suite, etc.",
@@ -1122,6 +1275,22 @@ export const translations = {
 			zipPlaceholder: "01000",
 			country: "País",
 			countryPlaceholder: "México",
+		},
+
+		card: {
+			number: "Número de tarjeta",
+			expiry: "Vencimiento (MM/AA)",
+			cvc: "Código de seguridad",
+			holderName: "Nombre en la tarjeta",
+			tokenize: "Guardar tarjeta de forma segura",
+			tokenized: "Tarjeta guardada",
+			replace: "Cambiar tarjeta",
+			invalidNumber: "Número de tarjeta inválido",
+			expiredCard: "Tarjeta vencida",
+			invalidCvc: "Código de seguridad inválido",
+			tokenizeFailed: "No se pudo guardar la tarjeta. Intente de nuevo.",
+			brandsHint:
+				"Marcas aceptadas (códigos ISO separados por coma: visa, mastercard)",
 		},
 
 		// Phone

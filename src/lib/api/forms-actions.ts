@@ -12,6 +12,7 @@ import {
 	listFormVersions,
 	saveFieldsDraft,
 	cloneForm,
+	importForm,
 } from "./forms";
 import type {
 	CreateFormPayload,
@@ -109,4 +110,21 @@ export async function listFormVersionsAction(
  */
 export async function cloneFormAction(formId: string): Promise<Form> {
 	return withJwt((jwt) => cloneForm(formId, { jwt }));
+}
+
+/**
+ * Server action: import a form from an exported JSON payload.
+ */
+export async function importFormAction(payload: {
+	metadata?: { version?: string; kind?: string; exportedAt?: string };
+	form: {
+		name: string;
+		nameEs?: string;
+		description?: string;
+		descriptionEs?: string;
+		tags?: string[];
+	};
+	fields: unknown[];
+}): Promise<Form> {
+	return withJwt((jwt) => importForm(payload, { jwt }));
 }

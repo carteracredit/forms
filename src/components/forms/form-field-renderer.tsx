@@ -16,9 +16,11 @@ import {
 } from "@/components/ui/select";
 import { PhoneInput } from "@/components/forms/phone-input";
 import { AddressInput } from "@/components/forms/address-input";
+import { CardInput } from "@/components/forms/card-input";
 import { NameInput } from "@/components/forms/name-input";
 import { Star } from "lucide-react";
 import { useState } from "react";
+import { MonthPicker } from "@/components/ui/month-picker";
 
 interface FormFieldRendererProps {
 	field: FormField;
@@ -177,7 +179,44 @@ export function FormFieldRenderer({
 							value={value}
 							onChange={(val) => onChange(field.id, val)}
 							largeText={largeText}
-							showAutocompleteToggle={!compact}
+							allowAutocomplete={field.properties?.enableAutocomplete !== false}
+							allowUspsValidation={
+								field.properties?.enableUspsValidation === true
+							}
+						/>
+					)}
+				</div>
+			);
+
+		case "card":
+			return (
+				<div className="space-y-2">
+					<Label className={labelClass}>
+						{fieldLabel}
+						{field.required && <span className="text-destructive ml-1">*</span>}
+					</Label>
+					{compact ? (
+						<Input
+							readOnly
+							value={
+								value && typeof value === "object" && "masked" in value
+									? String(value.masked)
+									: ""
+							}
+							placeholder={fieldPlaceholder || "••••"}
+							className={inputClass}
+						/>
+					) : (
+						<CardInput
+							value={
+								value && typeof value === "object" && "tokenId" in value
+									? value
+									: null
+							}
+							onChange={(val) => onChange(field.id, val)}
+							largeText={largeText}
+							acceptedBrands={field.properties?.acceptedBrands}
+							requireHolderName={field.properties?.requireHolderName === true}
 						/>
 					)}
 				</div>
@@ -229,14 +268,14 @@ export function FormFieldRenderer({
 						onValueChange={(val) => onChange(field.id, val)}
 						className={compact ? "flex flex-wrap gap-x-4 gap-y-2" : "space-y-2"}
 					>
-						{field.options?.map((option) => (
+						{field.options?.map((option, i) => (
 							<div key={option} className="flex items-center space-x-2">
 								<RadioGroupItem value={option} id={`${field.id}-${option}`} />
 								<Label
 									htmlFor={`${field.id}-${option}`}
 									className={`cursor-pointer font-normal ${labelClass}`}
 								>
-									{option}
+									{getFieldLabel(option, field.optionsEs?.[i])}
 								</Label>
 							</div>
 						))}
@@ -254,7 +293,7 @@ export function FormFieldRenderer({
 					<div
 						className={compact ? "flex flex-wrap gap-x-4 gap-y-2" : "space-y-2"}
 					>
-						{field.options?.map((option) => (
+						{field.options?.map((option, i) => (
 							<div key={option} className="flex items-center space-x-2">
 								<Checkbox
 									id={`${field.id}-${option}`}
@@ -279,7 +318,7 @@ export function FormFieldRenderer({
 									htmlFor={`${field.id}-${option}`}
 									className={`cursor-pointer font-normal ${labelClass}`}
 								>
-									{option}
+									{getFieldLabel(option, field.optionsEs?.[i])}
 								</Label>
 							</div>
 						))}
@@ -304,9 +343,9 @@ export function FormFieldRenderer({
 							/>
 						</SelectTrigger>
 						<SelectContent>
-							{field.options?.map((option) => (
+							{field.options?.map((option, i) => (
 								<SelectItem key={option} value={option}>
-									{option}
+									{getFieldLabel(option, field.optionsEs?.[i])}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -498,6 +537,25 @@ export function FormFieldRenderer({
 						className={inputClass}
 						min={field.properties?.dateMin}
 						max={field.properties?.dateMax}
+					/>
+				</div>
+			);
+
+		case "month":
+			return (
+				<div className="space-y-2">
+					<Label className={labelClass}>
+						{fieldLabel}
+						{field.required && <span className="text-destructive ml-1">*</span>}
+					</Label>
+					<MonthPicker
+						value={value || ""}
+						onChange={(val) => onChange(field.id, val)}
+						min={field.properties?.monthMin}
+						max={field.properties?.monthMax}
+						disabled={false}
+						required={field.required}
+						placeholder={fieldPlaceholder}
 					/>
 				</div>
 			);

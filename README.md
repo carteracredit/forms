@@ -18,6 +18,12 @@ npm create cloudflare@latest -- --template=cloudflare/templates/next-starter-tem
 
 A live public deployment of this template is available at [https://next-starter-template.templates.workers.dev](https://next-starter-template.templates.workers.dev)
 
+## Environment variables
+
+Copy `.env.example` to `.env.local` for local development.
+
+**Public (`NEXT_PUBLIC_*`):** workflow URL, auth URLs, cases-svc base URL. The forms app calls **cases-svc** directly from the browser (JWT) for card tokenization and US address helpers; USPS and Google Places credentials live on **cases-svc**, not in this app.
+
 ## Getting Started
 
 First, run:

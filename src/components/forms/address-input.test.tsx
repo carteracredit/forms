@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, fireEvent, cleanup, waitFor } from "@testing-library/react";
+import { render, fireEvent, cleanup } from "@testing-library/react";
 import { AddressInput } from "./address-input";
 
 // Mock LanguageProvider
@@ -26,22 +26,10 @@ describe("AddressInput", () => {
 		expect(container).toHaveTextContent("address.country");
 	});
 
-	it("should render autocomplete toggle when showAutocompleteToggle is true", () => {
+	it("renders search input when autocomplete is enabled (default)", () => {
 		const onChange = vi.fn();
-		const { container } = render(
-			<AddressInput onChange={onChange} showAutocompleteToggle />,
-		);
-
-		expect(container).toHaveTextContent("address.autocomplete");
-	});
-
-	it("should hide autocomplete toggle when showAutocompleteToggle is false", () => {
-		const onChange = vi.fn();
-		const { container } = render(
-			<AddressInput onChange={onChange} showAutocompleteToggle={false} />,
-		);
-
-		expect(container).not.toHaveTextContent("address.autocomplete");
+		const { getByLabelText } = render(<AddressInput onChange={onChange} />);
+		expect(getByLabelText(/common\.search/u)).toBeInTheDocument();
 	});
 
 	it("should call onChange when street field changes", () => {
@@ -84,23 +72,5 @@ describe("AddressInput", () => {
 			'input[placeholder="address.streetPlaceholder"]',
 		);
 		expect(streetInput).toBeDisabled();
-	});
-
-	it("should show search input when autocomplete is enabled", async () => {
-		const onChange = vi.fn();
-		const { container } = render(
-			<AddressInput onChange={onChange} showAutocompleteToggle />,
-		);
-
-		const switchElement = container.querySelector(
-			'button[role="switch"]',
-		) as HTMLElement;
-		fireEvent.click(switchElement);
-
-		await waitFor(() => {
-			expect(
-				container.querySelector('input[placeholder*="common.search"]'),
-			).toBeInTheDocument();
-		});
 	});
 });

@@ -24,6 +24,7 @@ import {
 	RefreshCw,
 	Loader2,
 	AlertCircle,
+	Download,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -53,6 +54,9 @@ import { FieldShowcase } from "./field-showcase";
 import { SessionControls } from "@/components/SessionControls";
 import { EditFormInfoDialog } from "./edit-form-info-dialog";
 import { toast } from "sonner";
+import { serializeForm } from "@/lib/forms/io";
+import { JSONModal } from "@/components/forms/json-modal";
+import type { FormExport } from "@/lib/forms/form-export-schema";
 
 interface FormDetailProps {
 	formId: string;
@@ -92,6 +96,10 @@ export function FormDetail({
 	const [showArchiveDialog, setShowArchiveDialog] = useState(false);
 	const [isPublishing, setIsPublishing] = useState(false);
 	const [isArchiving, setIsArchiving] = useState(false);
+	const [exportModal, setExportModal] = useState<{
+		open: boolean;
+		data: FormExport | null;
+	}>({ open: false, data: null });
 
 	const dateLocale = language === "es" ? es : enUS;
 
@@ -163,6 +171,15 @@ export function FormDetail({
 	// Version used for schema display (selected version or latest)
 	const latestPublishedVersion = selectedVersion ?? latestVersion;
 
+	const handleExportJson = () => {
+		try {
+			const exportData = serializeForm(selectedForm, displayFields);
+			setExportModal({ open: true, data: exportData });
+		} catch {
+			toast.error(t("formDetail.toastExportError"));
+		}
+	};
+
 	return (
 		<div className="flex flex-col h-full">
 			{/* Header */}
@@ -180,10 +197,13 @@ export function FormDetail({
 					<Separator orientation="vertical" className="h-6" />
 					<div className="flex-1 min-w-0">
 						<h1 className="text-2xl font-semibold text-foreground truncate">
-							{selectedForm.name}
+							{getFieldLabel(selectedForm.name, selectedForm.nameEs)}
 						</h1>
 						<p className="text-sm text-muted-foreground mt-1 truncate">
-							{selectedForm.description}
+							{getFieldLabel(
+								selectedForm.description,
+								selectedForm.descriptionEs,
+							)}
 						</p>
 					</div>
 					<div className="flex items-center gap-2 shrink-0">
@@ -203,6 +223,15 @@ export function FormDetail({
 						>
 							<Eye className="h-4 w-4" />
 							{t("formDetail.previewForm")}
+						</Button>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleExportJson}
+							className="gap-2"
+						>
+							<Download className="h-4 w-4" />
+							{t("formDetail.exportJson")}
 						</Button>
 						{selectedForm.status === "draft" && (
 							<>
@@ -694,6 +723,16 @@ export function FormDetail({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{exportModal.open && exportModal.data && (
+				<JSONModal
+					open={exportModal.open}
+					mode="export"
+					exportData={exportModal.data}
+					onClose={() => setExportModal({ open: false, data: null })}
+					onImportNew={() => {}}
+				/>
+			)}
 		</div>
 	);
 }
