@@ -1,3 +1,18 @@
+# [1.1.0](https://github.com/carteracredit/forms/compare/v1.0.0...v1.1.0) (2026-07-22)
+
+
+### Features
+
+* add address and card tokenization APIs with Google Places integration ([a850953](https://github.com/carteracredit/forms/commit/a850953cd5a341f5a66bb534104761cb8a146fe1))
+* add bilingual support for form field options ([26fbe93](https://github.com/carteracredit/forms/commit/26fbe93d142959f4c2316f58880eecb523af0e31))
+* add JSON export functionality to FormDetail component ([84f5001](https://github.com/carteracredit/forms/commit/84f5001b1606f8f6fa6a6052d6ec42b65cb42900))
+* add month field type with picker component ([03eac10](https://github.com/carteracredit/forms/commit/03eac10a687019a44d2b01a8a9191cae04669601))
+* enhance form creation and editing with bilingual support ([1793a12](https://github.com/carteracredit/forms/commit/1793a1240f96c4ff19d495c055050815c5bad637))
+* enhance form import functionality in FormEditor component ([f15df71](https://github.com/carteracredit/forms/commit/f15df71156a857798275b570fe72fa6674e04401))
+* enhance middleware with admin permissions handling ([9354c05](https://github.com/carteracredit/forms/commit/9354c054c93bcd3e7904a9314375571f1e898b02))
+* implement JSON export/import functionality in form editor and forms list ([ba705ba](https://github.com/carteracredit/forms/commit/ba705ba6abdc6b710cfc90e6ed95c522b94aa9d7))
+* update form cloning functionality to navigate to editor page ([6523016](https://github.com/carteracredit/forms/commit/65230165e29f59681a256890f243ebe4f6bdd72b))
+
 # 1.0.0 (2026-04-17)
 
 
