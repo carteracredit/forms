@@ -229,11 +229,11 @@ describe("cookies", () => {
 
 	describe("COOKIE_NAMES", () => {
 		it("should have theme cookie name", () => {
-			expect(COOKIE_NAMES.THEME).toBe("cartera-theme");
+			expect(COOKIE_NAMES.THEME).toBe("carteracredit-theme");
 		});
 
 		it("should have language cookie name", () => {
-			expect(COOKIE_NAMES.LANGUAGE).toBe("cartera-lang");
+			expect(COOKIE_NAMES.LANGUAGE).toBe("carteracredit-lang");
 		});
 	});
 });

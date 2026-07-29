@@ -57,7 +57,6 @@ export function LanguageProvider({
 		} else {
 			const detected = detectBrowserLanguage();
 			setLanguageState(detected);
-			setCookie(COOKIE_NAMES.LANGUAGE, detected);
 		}
 	}, [defaultLanguage]);
 
