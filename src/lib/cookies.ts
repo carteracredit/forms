@@ -132,6 +132,6 @@ export function deleteCookie(name: string): void {
 
 // Cookie names for shared preferences
 export const COOKIE_NAMES = {
-	THEME: "cartera-theme",
-	LANGUAGE: "cartera-lang",
+	THEME: "carteracredit-theme",
+	LANGUAGE: "carteracredit-lang",
 } as const;
