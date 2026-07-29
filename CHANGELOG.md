@@ -1,3 +1,10 @@
+## [1.1.1-rc.1](https://github.com/carteracredit/forms/compare/v1.1.0...v1.1.1-rc.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* remove cookie setting for detected language in LanguageProvider ([2b74179](https://github.com/carteracredit/forms/commit/2b7417972a57715f8e71d0ec9b4cd825a7e3b556))
+
 # [1.1.0-rc.2](https://github.com/carteracredit/forms/compare/v1.1.0-rc.1...v1.1.0-rc.2) (2026-07-29)
 
 
