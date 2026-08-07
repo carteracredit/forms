@@ -1,3 +1,10 @@
+# [1.2.0-rc.1](https://github.com/carteracredit/forms/compare/v1.1.1-rc.1...v1.2.0-rc.1) (2026-08-07)
+
+
+### Features
+
+* integrate LogRocket for session replay and error tracking ([c51560a](https://github.com/carteracredit/forms/commit/c51560ac61f7f07e10fc65d3de2fb02cffe80c58))
+
 ## [1.1.1-rc.1](https://github.com/carteracredit/forms/compare/v1.1.0...v1.1.1-rc.1) (2026-07-29)
 
 
