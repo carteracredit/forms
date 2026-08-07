@@ -115,30 +115,36 @@ export function AddressInput({
 	const controlled = parseInitial(value);
 
 	return (
-		<USAddressInput
-			labels={labels}
-			value={controlled}
-			onChange={onChange}
-			disabled={disabled}
-			largeText={largeText}
-			lookupZip={(zip, signal) => lookupZip(zip, signal)}
-			validateAddress={
-				allowUspsValidation
-					? (addr, signal) =>
-							validateAddressUs(
-								{
-									street: addr.street,
-									street2: addr.street2,
-									city: addr.city,
-									state: addr.state,
-									zip: addr.zip,
-								},
-								signal,
-							)
-					: undefined
-			}
-			autocomplete={autocomplete}
-			onError={(msg) => toast.error(msg)}
-		/>
+		// `USAddressInput` (from @algenium/blocks) renders its own street/city/
+		// state/zip inputs internally, so we can't pass `data-private` to them
+		// directly. LogRocket treats `data-private` as inherited by descendants,
+		// so this wrapper keeps the address entry area out of session replays.
+		<div data-private>
+			<USAddressInput
+				labels={labels}
+				value={controlled}
+				onChange={onChange}
+				disabled={disabled}
+				largeText={largeText}
+				lookupZip={(zip, signal) => lookupZip(zip, signal)}
+				validateAddress={
+					allowUspsValidation
+						? (addr, signal) =>
+								validateAddressUs(
+									{
+										street: addr.street,
+										street2: addr.street2,
+										city: addr.city,
+										state: addr.state,
+										zip: addr.zip,
+									},
+									signal,
+								)
+						: undefined
+				}
+				autocomplete={autocomplete}
+				onError={(msg) => toast.error(msg)}
+			/>
+		</div>
 	);
 }

@@ -4,6 +4,7 @@
 
 import { getCasesServiceUrl } from "./config";
 import { getClientJwt } from "../auth/getClientJwt";
+import { withLogRocketHeader } from "./logrocket-headers";
 
 async function authorizedFetch(
 	path: string,
@@ -16,11 +17,11 @@ async function authorizedFetch(
 	const base = getCasesServiceUrl();
 	return fetch(`${base}${path}`, {
 		...init,
-		headers: {
+		headers: withLogRocketHeader({
 			Authorization: `Bearer ${jwt}`,
 			...(init.body != null ? { "Content-Type": "application/json" } : {}),
 			...init.headers,
-		},
+		}),
 	});
 }
 

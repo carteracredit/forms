@@ -77,6 +77,7 @@ export function NameInput({
 						placeholder={t("name.firstNamePlaceholder")}
 						disabled={disabled}
 						className={inputClass}
+						data-private
 					/>
 				</div>
 				<div className="space-y-1.5">
@@ -87,6 +88,7 @@ export function NameInput({
 						placeholder={t("name.lastNamePlaceholder")}
 						disabled={disabled}
 						className={inputClass}
+						data-private
 					/>
 				</div>
 			</div>
@@ -105,6 +107,7 @@ export function NameInput({
 						placeholder={t("name.middleNamePlaceholder")}
 						disabled={disabled}
 						className={inputClass}
+						data-private
 					/>
 				</div>
 			)}
