@@ -4,6 +4,13 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+import { initLogRocket } from "@/lib/logrocket/init";
+import { getCachedSessionUrl } from "@/lib/logrocket/session";
+
+// Start LogRocket session replay before Sentry so its session URL is
+// available (once resolved) to attach to Sentry events via `beforeSend`.
+initLogRocket();
+
 // Environment variables (set in Cloudflare Worker config or .env)
 // NEXT_PUBLIC_SENTRY_DSN: Your Sentry DSN from project settings
 // NEXT_PUBLIC_ENVIRONMENT: "development" for dev branch, "production" for main branch
@@ -19,7 +26,10 @@ Sentry.init({
 	environment,
 
 	// Add optional integrations for additional features
-	integrations: [Sentry.replayIntegration()],
+	integrations: [
+		Sentry.replayIntegration(),
+		Sentry.consoleLoggingIntegration({ levels: ["error", "warn"] }),
+	],
 
 	// Define how likely traces are sampled. Higher in dev for debugging, lower in production.
 	tracesSampleRate: isDevelopment ? 1.0 : 0.2,
@@ -37,6 +47,19 @@ Sentry.init({
 	// Enable sending user PII (Personally Identifiable Information)
 	// https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
 	sendDefaultPii: true,
+
+	// Attach the LogRocket session replay URL (when available) so a Sentry
+	// issue can be cross-referenced with its session recording.
+	beforeSend(event) {
+		const sessionUrl = getCachedSessionUrl();
+		if (sessionUrl) {
+			event.contexts = {
+				...event.contexts,
+				logrocket: { sessionURL: sessionUrl },
+			};
+		}
+		return event;
+	},
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

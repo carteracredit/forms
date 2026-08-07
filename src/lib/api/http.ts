@@ -56,6 +56,12 @@ export interface FetchJsonOptions extends RequestInit {
 	jwt?: string;
 }
 
+// Note: unlike `cases-svc-client.ts` (a genuine browser → cases-svc client),
+// `fetchJson` is invoked from `forms.ts` through Next.js Server Actions
+// (`forms-actions.ts`, "use server"). Those calls run on the Worker itself,
+// with no access to the browser's LogRocket session, so `X-LogRocket-Session-URL`
+// correlation isn't wired in here — there is no session URL to attach at that layer.
+
 export async function fetchJson<T>(
 	url: string,
 	init?: FetchJsonOptions,

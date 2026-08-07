@@ -19,6 +19,11 @@ Sentry.init({
 	// Tag events with the environment (dev or production)
 	environment,
 
+	// Add optional integrations for additional features
+	integrations: [
+		Sentry.consoleLoggingIntegration({ levels: ["error", "warn"] }),
+	],
+
 	// Define how likely traces are sampled. Higher in dev for debugging, lower in production.
 	tracesSampleRate: isDevelopment ? 1.0 : 0.2,
 
