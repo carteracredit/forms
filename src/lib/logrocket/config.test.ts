@@ -31,12 +31,19 @@ describe("getLogRocketConfig", () => {
 	it("builds the release from environment and commit SHA", () => {
 		vi.stubEnv("NEXT_PUBLIC_ENVIRONMENT", "production");
 		vi.stubEnv("NEXT_PUBLIC_COMMIT_SHA", "abc1234");
-		expect(getLogRocketConfig().release).toBe("forms@production-abc1234");
+		expect(getLogRocketConfig().release).toBe("forms-production-abc1234");
+	});
+
+	it("trims whitespace and newlines from environment and commit SHA", () => {
+		vi.stubEnv("NEXT_PUBLIC_ENVIRONMENT", "production\n");
+		vi.stubEnv("NEXT_PUBLIC_COMMIT_SHA", " abc1234\n");
+		expect(getLogRocketConfig().release).toBe("forms-production-abc1234");
+		expect(getLogRocketConfig().environment).toBe("production");
 	});
 
 	it("falls back to 'local' in the release when no commit SHA is set", () => {
 		vi.stubEnv("NEXT_PUBLIC_ENVIRONMENT", "development");
 		vi.stubEnv("NEXT_PUBLIC_COMMIT_SHA", "");
-		expect(getLogRocketConfig().release).toBe("forms@development-local");
+		expect(getLogRocketConfig().release).toBe("forms-development-local");
 	});
 });

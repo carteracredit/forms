@@ -9,7 +9,7 @@ export interface LogRocketConfig {
 	appId: string;
 	rootHostname: string;
 	environment: string;
-	/** e.g. `forms@production-abc1234`, reusing the same commit SHA as the Sentry release. */
+	/** e.g. `forms-production-abc1234` (no @ — LogRocket rejects it). */
 	release: string;
 }
 
@@ -20,17 +20,18 @@ export interface LogRocketConfig {
 export const getLogRocketConfig = (): LogRocketConfig => {
 	const appId = process.env.NEXT_PUBLIC_LOGROCKET_APP_ID ?? "";
 	const rootHostname = process.env.NEXT_PUBLIC_LOGROCKET_ROOT_HOSTNAME ?? "";
-	const environment =
+	const environment = (
 		process.env.NEXT_PUBLIC_ENVIRONMENT ||
 		process.env.NODE_ENV ||
-		"development";
-	const commitSha = process.env.NEXT_PUBLIC_COMMIT_SHA || undefined;
+		"development"
+	).trim();
+	const commitSha = process.env.NEXT_PUBLIC_COMMIT_SHA?.trim() || undefined;
 
 	return {
 		enabled: appId !== "",
 		appId,
 		rootHostname,
 		environment,
-		release: `forms@${environment}-${commitSha ?? "local"}`,
+		release: `forms-${environment}-${commitSha ?? "local"}`,
 	};
 };
