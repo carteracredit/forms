@@ -41,6 +41,16 @@ describe("getLogRocketConfig", () => {
 		expect(getLogRocketConfig().environment).toBe("production");
 	});
 
+	it("truncates long commit SHAs to 7 chars for LogRocket's 60-char limit", () => {
+		vi.stubEnv("NEXT_PUBLIC_ENVIRONMENT", "development");
+		vi.stubEnv(
+			"NEXT_PUBLIC_COMMIT_SHA",
+			"774a8c088e02b07c4364e8844387a5d263bd5a63",
+		);
+		expect(getLogRocketConfig().release).toBe("forms-development-774a8c0");
+		expect(getLogRocketConfig().release.length).toBeLessThanOrEqual(60);
+	});
+
 	it("falls back to 'local' in the release when no commit SHA is set", () => {
 		vi.stubEnv("NEXT_PUBLIC_ENVIRONMENT", "development");
 		vi.stubEnv("NEXT_PUBLIC_COMMIT_SHA", "");

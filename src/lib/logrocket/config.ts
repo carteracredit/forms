@@ -26,12 +26,14 @@ export const getLogRocketConfig = (): LogRocketConfig => {
 		"development"
 	).trim();
 	const commitSha = process.env.NEXT_PUBLIC_COMMIT_SHA?.trim() || undefined;
+	// LogRocket release versions are capped at 60 chars; use short SHA.
+	const shortSha = commitSha ? commitSha.slice(0, 7) : "local";
 
 	return {
 		enabled: appId !== "",
 		appId,
 		rootHostname,
 		environment,
-		release: `forms-${environment}-${commitSha ?? "local"}`,
+		release: `forms-${environment}-${shortSha}`,
 	};
 };

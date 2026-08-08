@@ -34,7 +34,9 @@ const environment = (
 	"development"
 ).trim();
 const commitSha = process.env.WORKERS_CI_COMMIT_SHA?.trim();
-const release = `forms-${environment}-${commitSha ?? "local"}`;
+// LogRocket release versions are capped at 60 chars; use short SHA.
+const shortSha = commitSha ? commitSha.slice(0, 7) : "local";
+const release = `forms-${environment}-${shortSha}`;
 
 /**
  * Recursively delete .map files under `dir`. Leaves non-map assets intact
