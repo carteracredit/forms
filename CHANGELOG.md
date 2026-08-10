@@ -1,3 +1,5 @@
+## [1.1.1](https://github.com/carteracredit/forms/compare/v1.1.0...v1.1.1) (2026-07-29)
+
 # [1.2.0-rc.2](https://github.com/carteracredit/forms/compare/v1.2.0-rc.1...v1.2.0-rc.2) (2026-08-08)
 
 
