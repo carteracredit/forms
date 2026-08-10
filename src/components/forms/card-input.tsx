@@ -50,16 +50,22 @@ export function CardInput({
 	);
 
 	return (
-		<BlocksCardInput
-			labels={labels}
-			value={value}
-			onChange={onChange}
-			disabled={disabled}
-			largeText={largeText}
-			acceptedBrands={acceptedBrands}
-			requireHolderName={requireHolderName}
-			tokenize={async (input) => tokenizeCard(input)}
-			onError={(msg) => toast.error(msg)}
-		/>
+		// `BlocksCardInput` (from @algenium/blocks) renders its own PAN/CVC/expiry
+		// inputs internally, so we can't pass `data-private` to them directly.
+		// LogRocket treats `data-private` as inherited by descendants, so this
+		// wrapper keeps the whole card entry area out of session replays.
+		<div data-private>
+			<BlocksCardInput
+				labels={labels}
+				value={value}
+				onChange={onChange}
+				disabled={disabled}
+				largeText={largeText}
+				acceptedBrands={acceptedBrands}
+				requireHolderName={requireHolderName}
+				tokenize={async (input) => tokenizeCard(input)}
+				onError={(msg) => toast.error(msg)}
+			/>
+		</div>
 	);
 }

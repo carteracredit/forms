@@ -178,6 +178,7 @@ export function PhoneInput({
 				placeholder={placeholder || t("phone.placeholder")}
 				disabled={disabled}
 				className={`rounded-l-none flex-1 min-w-0 ${largeText ? "text-base py-3" : ""}`}
+				data-private
 			/>
 		</div>
 	);

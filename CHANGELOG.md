@@ -1,5 +1,22 @@
 ## [1.1.1](https://github.com/carteracredit/forms/compare/v1.1.0...v1.1.1) (2026-07-29)
 
+# [1.2.0-rc.2](https://github.com/carteracredit/forms/compare/v1.2.0-rc.1...v1.2.0-rc.2) (2026-08-08)
+
+
+### Bug Fixes
+
+* trim whitespace from environment variables and update LogRocket release format ([d1b9f15](https://github.com/carteracredit/forms/commit/d1b9f159bbbbfece1853176fc3f70e78b77cc221))
+* truncate commit SHA for LogRocket release format ([30c0ec1](https://github.com/carteracredit/forms/commit/30c0ec1574e8f88d371cf4f253f1a126739bbcf8))
+
+# [1.2.0-rc.1](https://github.com/carteracredit/forms/compare/v1.1.1-rc.1...v1.2.0-rc.1) (2026-08-07)
+
+
+### Features
+
+* integrate LogRocket for session replay and error tracking ([c51560a](https://github.com/carteracredit/forms/commit/c51560ac61f7f07e10fc65d3de2fb02cffe80c58))
+
+## [1.1.1-rc.1](https://github.com/carteracredit/forms/compare/v1.1.0...v1.1.1-rc.1) (2026-07-29)
+
 
 ### Bug Fixes
 

@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/components/LanguageProvider";
 import { SessionHydrator } from "@/lib/auth/useAuthSession";
 import { getServerSession } from "@/lib/auth/getServerSession";
 import { Toaster } from "@/components/ui/sonner";
+import { LogRocketIdentify } from "@/components/LogRocketIdentify";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -45,6 +46,7 @@ export default async function RootLayout({
 				<ThemeProvider>
 					<LanguageProvider>
 						<SessionHydrator serverSession={session}>
+							<LogRocketIdentify />
 							{children}
 							<Toaster />
 						</SessionHydrator>
