@@ -1,3 +1,10 @@
+# [1.2.0-rc.3](https://github.com/carteracredit/forms/compare/v1.2.0-rc.2...v1.2.0-rc.3) (2026-08-18)
+
+
+### Bug Fixes
+
+* **translations:** update profile title in language context to enhance clarity ([869452b](https://github.com/carteracredit/forms/commit/869452b89eb46abe307909c0d215a238f090cbdf))
+
 ## [1.1.1](https://github.com/carteracredit/forms/compare/v1.1.0...v1.1.1) (2026-07-29)
 
 # [1.2.0-rc.2](https://github.com/carteracredit/forms/compare/v1.2.0-rc.1...v1.2.0-rc.2) (2026-08-08)
