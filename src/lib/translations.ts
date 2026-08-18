@@ -74,7 +74,7 @@ export const translations = {
 		// User Menu
 		userAccount: "My account",
 		userProfile: "Profile",
-		userLogout: "Log Out",
+		userLogout: "Sign out",
 		userBilling: "Billing",
 		userNotifications: "Notifications",
 
@@ -546,7 +546,7 @@ export const translations = {
 			myAccount: "My account",
 			profile: "Profile",
 			preferences: "Preferences",
-			logout: "Log Out",
+			logout: "Sign out",
 		},
 
 		// Validation
@@ -657,7 +657,7 @@ export const translations = {
 		forbiddenDescription:
 			"This area is restricted to administrator users only. If you think you should have access, please contact your system administrator.",
 		forbiddenBack: "Back to home",
-		forbiddenLogout: "Log Out",
+		forbiddenLogout: "Sign out",
 	},
 	es: {
 		// Common
@@ -725,7 +725,7 @@ export const translations = {
 		// User Menu
 		userAccount: "Mi cuenta",
 		userProfile: "Perfil",
-		userLogout: "Cerrar Sesión",
+		userLogout: "Cerrar sesión",
 		userBilling: "Facturación",
 		userNotifications: "Notificaciones",
 
@@ -1214,7 +1214,7 @@ export const translations = {
 			myAccount: "Mi cuenta",
 			profile: "Perfil",
 			preferences: "Preferencias",
-			logout: "Cerrar Sesión",
+			logout: "Cerrar sesión",
 		},
 
 		// Validation
