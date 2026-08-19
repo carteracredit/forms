@@ -1,5 +1,7 @@
 ## [1.2.1](https://github.com/carteracredit/forms/compare/v1.2.0...v1.2.1) (2026-08-18)
 
+## [1.2.1-rc.1](https://github.com/carteracredit/forms/compare/v1.2.0...v1.2.1-rc.1) (2026-08-18)
+
 
 ### Bug Fixes
 
