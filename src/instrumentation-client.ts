@@ -5,7 +5,7 @@
 import * as Sentry from "@sentry/nextjs";
 
 import { initLogRocket } from "@/lib/logrocket/init";
-import { getCachedSessionUrl } from "@/lib/logrocket/session";
+import { getCachedSessionUrl } from "@/lib/logrocket/session-store";
 
 // Start LogRocket session replay before Sentry so its session URL is
 // available (once resolved) to attach to Sentry events via `beforeSend`.
