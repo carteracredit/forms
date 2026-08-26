@@ -253,6 +253,49 @@ describe("FormFieldRenderer", () => {
 		expect(container.querySelector('input[type="date"]')).toBeInTheDocument();
 	});
 
+	it("applies resolved dateMinOffset to the date input", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 7, 25, 12, 0, 0));
+		const onChange = vi.fn();
+		const field = createField({
+			type: "date",
+			properties: { dateMinOffset: { direction: "past", years: 2 } },
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		expect(container.querySelector('input[type="date"]')).toHaveAttribute(
+			"min",
+			"2024-08-25",
+		);
+		vi.useRealTimers();
+	});
+
+	it("renders datetime-local input with resolved offsets", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 7, 25, 12, 0, 0));
+		const onChange = vi.fn();
+		const field = createField({
+			type: "datetime",
+			properties: {
+				dateMinOffset: { direction: "past", days: 15, hours: 2 },
+				dateMaxOffset: { direction: "future", days: 40, hours: 5 },
+			},
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		const input = container.querySelector('input[type="datetime-local"]');
+		expect(input).toBeInTheDocument();
+		expect(input).toHaveAttribute("min", "2026-08-10T10:00");
+		expect(input).toHaveAttribute("max", "2026-10-04T17:00");
+		vi.useRealTimers();
+	});
+
 	it("should render phone input", () => {
 		const onChange = vi.fn();
 		const field = createField({ type: "phone" });
@@ -401,6 +444,28 @@ describe("FormFieldRenderer", () => {
 		const picker = container.querySelector('[data-testid="month-picker"]');
 		expect(picker).toHaveAttribute("data-min", "2024-01");
 		expect(picker).toHaveAttribute("data-max", "2024-12");
+	});
+
+	it("passes resolved month offsets to the month picker", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 7, 25, 12, 0, 0));
+		const onChange = vi.fn();
+		const field = createField({
+			type: "month",
+			properties: {
+				monthMinOffset: { direction: "past", years: 2, months: 1 },
+				monthMaxOffset: { direction: "future", months: 3 },
+			},
+		});
+
+		const { container } = render(
+			<FormFieldRenderer field={field} value="" onChange={onChange} />,
+		);
+
+		const picker = container.querySelector('[data-testid="month-picker"]');
+		expect(picker).toHaveAttribute("data-min", "2024-07");
+		expect(picker).toHaveAttribute("data-max", "2026-11");
+		vi.useRealTimers();
 	});
 
 	it("should call onChange when month picker changes", () => {

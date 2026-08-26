@@ -30,6 +30,7 @@ export default defineConfig({
 				"src/views/**",
 			// Large form UI components - tested via integration/Storybook visual tests
 			"src/components/forms/form-editor.tsx",
+			"src/components/forms/date-constraint-editor.tsx",
 			"src/components/forms/form-detail.tsx",
 			"src/components/forms/form-field-renderer.tsx",
 			"src/components/forms/forms-list.tsx",
