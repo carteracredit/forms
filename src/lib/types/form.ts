@@ -93,7 +93,27 @@ export interface FormField {
 		monthMin?: string;
 		/** Maximum month (YYYY-MM) for month picker field */
 		monthMax?: string;
+		/** Relative-to-today minimum for date/datetime fields */
+		dateMinOffset?: DateOffset;
+		/** Relative-to-today maximum for date/datetime fields */
+		dateMaxOffset?: DateOffset;
+		/** Relative-to-today minimum for month picker fields */
+		monthMinOffset?: DateOffset;
+		/** Relative-to-today maximum for month picker fields */
+		monthMaxOffset?: DateOffset;
 	};
+}
+
+/**
+ * Offset relative to the current date/time. All present components are summed.
+ */
+export interface DateOffset {
+	direction: "past" | "future";
+	years?: number;
+	months?: number;
+	days?: number;
+	hours?: number;
+	minutes?: number;
 }
 
 /**

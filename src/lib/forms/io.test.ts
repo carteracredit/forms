@@ -343,6 +343,57 @@ describe("validateFields", () => {
 		expect(result[0].properties?.monthMin).toBe("2024-01");
 		expect(result[0].properties?.monthMax).toBe("2024-12");
 	});
+
+	it("accepts date fields with relative offsets", () => {
+		const fields = [
+			{
+				id: "f1",
+				type: "date" as const,
+				label: "Birth Date",
+				required: true,
+				properties: {
+					dateMinOffset: { direction: "past" as const, years: 2 },
+					dateMaxOffset: { direction: "future" as const, years: 1 },
+				},
+			},
+		];
+		const result = validateFields(fields);
+		expect(result[0].properties?.dateMinOffset).toEqual({
+			direction: "past",
+			years: 2,
+		});
+	});
+
+	it("throws when a month offset uses days", () => {
+		const fields = [
+			{
+				id: "f1",
+				type: "month" as const,
+				label: "Start Month",
+				required: true,
+				properties: {
+					monthMinOffset: { direction: "past" as const, days: 15 },
+				},
+			},
+		];
+		expect(() => validateFields(fields)).toThrow(/not allowed/);
+	});
+
+	it("throws when resolved min is after max", () => {
+		const fields = [
+			{
+				id: "f1",
+				type: "date" as const,
+				label: "Appointment",
+				required: true,
+				properties: {
+					dateMin: "2030-01-01",
+					dateMax: "2020-01-01",
+				},
+			},
+		];
+		expect(() => validateFields(fields)).toThrow(/minimum later/);
+	});
 });
 
 describe("parseFormImport – month field", () => {
@@ -360,5 +411,28 @@ describe("parseFormImport – month field", () => {
 		expect(parsed.fields[0].type).toBe("month");
 		expect(parsed.fields[0].properties?.monthMin).toBe("2024-01");
 		expect(parsed.fields[0].properties?.monthMax).toBe("2024-12");
+	});
+
+	it("round-trips date offsets", () => {
+		const dateField: FormField = {
+			id: "f1",
+			type: "date",
+			label: "Birth Date",
+			required: true,
+			properties: {
+				dateMinOffset: { direction: "past", years: 2 },
+				dateMaxOffset: { direction: "future", days: 45 },
+			},
+		};
+		const exported = serializeForm(sampleForm, [dateField]);
+		const parsed = parseFormImport(JSON.stringify(exported));
+		expect(parsed.fields[0].properties?.dateMinOffset).toEqual({
+			direction: "past",
+			years: 2,
+		});
+		expect(parsed.fields[0].properties?.dateMaxOffset).toEqual({
+			direction: "future",
+			days: 45,
+		});
 	});
 });

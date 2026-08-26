@@ -19,8 +19,16 @@ import { AddressInput } from "@/components/forms/address-input";
 import { CardInput } from "@/components/forms/card-input";
 import { NameInput } from "@/components/forms/name-input";
 import { Star } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MonthPicker } from "@/components/ui/month-picker";
+import {
+	resolveDateMax,
+	resolveDateMin,
+	resolveDateTimeMax,
+	resolveDateTimeMin,
+	resolveMonthMax,
+	resolveMonthMin,
+} from "@/lib/forms/date-constraints";
 
 interface FormFieldRendererProps {
 	field: FormField;
@@ -45,6 +53,7 @@ export function FormFieldRenderer({
 	largeText = false,
 	compact = false,
 }: FormFieldRendererProps) {
+	const now = useMemo(() => new Date(), []);
 	const { getFieldLabel, getFieldPlaceholder, t } = useLanguage();
 	const labelClass = largeText ? "text-base" : "text-sm";
 	const inputClass = largeText ? "text-base py-3" : "";
@@ -516,8 +525,8 @@ export function FormFieldRenderer({
 						onChange={(e) => onChange(field.id, e.target.value)}
 						required={field.required}
 						className={inputClass}
-						min={field.properties?.dateMin}
-						max={field.properties?.dateMax}
+						min={resolveDateMin(field.properties, now)}
+						max={resolveDateMax(field.properties, now)}
 					/>
 				</div>
 			);
@@ -535,8 +544,8 @@ export function FormFieldRenderer({
 						onChange={(e) => onChange(field.id, e.target.value)}
 						required={field.required}
 						className={inputClass}
-						min={field.properties?.dateMin}
-						max={field.properties?.dateMax}
+						min={resolveDateTimeMin(field.properties, now)}
+						max={resolveDateTimeMax(field.properties, now)}
 					/>
 				</div>
 			);
@@ -551,8 +560,8 @@ export function FormFieldRenderer({
 					<MonthPicker
 						value={value || ""}
 						onChange={(val) => onChange(field.id, val)}
-						min={field.properties?.monthMin}
-						max={field.properties?.monthMax}
+						min={resolveMonthMin(field.properties, now)}
+						max={resolveMonthMax(field.properties, now)}
 						disabled={false}
 						required={field.required}
 						placeholder={fieldPlaceholder}

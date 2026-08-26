@@ -644,14 +644,24 @@ export function FieldShowcase() {
 					description: t("fieldLibrary.fieldRequired"),
 				},
 				{
-					name: "min",
+					name: "dateMin",
 					type: "string",
 					description: t("fieldLibrary.earliestSelectableDate"),
 				},
 				{
-					name: "max",
+					name: "dateMax",
 					type: "string",
 					description: t("fieldLibrary.latestSelectableDate"),
+				},
+				{
+					name: "dateMinOffset",
+					type: "DateOffset",
+					description: t("fieldLibrary.relativeMinOffset"),
+				},
+				{
+					name: "dateMaxOffset",
+					type: "DateOffset",
+					description: t("fieldLibrary.relativeMaxOffset"),
 				},
 			],
 			features: [
@@ -695,6 +705,16 @@ export function FieldShowcase() {
 					name: "monthMax",
 					type: "string",
 					description: t("fieldLibrary.latestSelectableMonth"),
+				},
+				{
+					name: "monthMinOffset",
+					type: "DateOffset",
+					description: t("fieldLibrary.relativeMinOffset"),
+				},
+				{
+					name: "monthMaxOffset",
+					type: "DateOffset",
+					description: t("fieldLibrary.relativeMaxOffset"),
 				},
 			],
 			features: [
@@ -764,14 +784,24 @@ export function FieldShowcase() {
 					description: t("fieldLibrary.fieldRequired"),
 				},
 				{
-					name: "min",
+					name: "dateMin",
 					type: "string",
 					description: t("fieldLibrary.earliestSelectableDatetime"),
 				},
 				{
-					name: "max",
+					name: "dateMax",
 					type: "string",
 					description: t("fieldLibrary.latestSelectableDatetime"),
+				},
+				{
+					name: "dateMinOffset",
+					type: "DateOffset",
+					description: t("fieldLibrary.relativeMinOffset"),
+				},
+				{
+					name: "dateMaxOffset",
+					type: "DateOffset",
+					description: t("fieldLibrary.relativeMaxOffset"),
 				},
 			],
 			features: [

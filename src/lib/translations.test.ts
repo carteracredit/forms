@@ -42,6 +42,14 @@ describe("translations", () => {
 			expect(translations.en.fieldTypes.month).toBe("Month Picker");
 			expect(translations.es.fieldTypes.month).toBe("Selector de Mes");
 		});
+
+		it("should have matching fieldProperties keys in both languages", () => {
+			const enKeys = Object.keys(translations.en.fieldProperties);
+			const esKeys = Object.keys(translations.es.fieldProperties);
+			expect(enKeys).toEqual(esKeys);
+			expect(enKeys).toContain("constraintRelative");
+			expect(enKeys).toContain("rangeInvalid");
+		});
 	});
 
 	describe("getLocaleForLanguage", () => {
