@@ -7,6 +7,18 @@ import { useFormStore } from "@/lib/form-store";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { FormField, FormFieldType } from "@/lib/types/form";
 import { normalizeFieldsForChecksum } from "@/lib/checksum";
+import {
+	DateConstraintEditor,
+	type DateConstraintValue,
+} from "@/components/forms/date-constraint-editor";
+import {
+	deriveConstraintMode,
+	describeOffset,
+	isResolvedRangeInvalid,
+	resolveBounds,
+	type DateFieldKind,
+	type DateOffset,
+} from "@/lib/forms/date-constraints";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -84,7 +96,6 @@ import {
 	RefreshCw,
 	Loader2,
 } from "lucide-react";
-import { MonthPicker } from "@/components/ui/month-picker";
 import { toast } from "sonner";
 
 function getFieldTypes(t: (key: string) => string): {
@@ -118,6 +129,93 @@ function getFieldTypes(t: (key: string) => string): {
 			icon: ListChecks,
 		},
 	];
+}
+
+const EMPTY_DATE_CONSTRAINT: DateConstraintValue = {
+	minMode: "none",
+	maxMode: "none",
+	minFixed: "",
+	maxFixed: "",
+	minOffset: { direction: "past" },
+	maxOffset: { direction: "future" },
+};
+
+function constraintFromProperties(
+	kind: DateFieldKind,
+	properties: FormField["properties"],
+): DateConstraintValue {
+	if (kind === "month") {
+		return {
+			minMode: deriveConstraintMode(
+				properties?.monthMin,
+				properties?.monthMinOffset,
+			),
+			maxMode: deriveConstraintMode(
+				properties?.monthMax,
+				properties?.monthMaxOffset,
+			),
+			minFixed: properties?.monthMin ?? "",
+			maxFixed: properties?.monthMax ?? "",
+			minOffset: properties?.monthMinOffset ?? { direction: "past" },
+			maxOffset: properties?.monthMaxOffset ?? { direction: "future" },
+		};
+	}
+	return {
+		minMode: deriveConstraintMode(
+			properties?.dateMin,
+			properties?.dateMinOffset,
+		),
+		maxMode: deriveConstraintMode(
+			properties?.dateMax,
+			properties?.dateMaxOffset,
+		),
+		minFixed: properties?.dateMin ?? "",
+		maxFixed: properties?.dateMax ?? "",
+		minOffset: properties?.dateMinOffset ?? { direction: "past" },
+		maxOffset: properties?.dateMaxOffset ?? { direction: "future" },
+	};
+}
+
+function applyConstraintToProperties(
+	kind: DateFieldKind,
+	constraint: DateConstraintValue,
+	properties: NonNullable<FormField["properties"]>,
+): void {
+	const writeOffset = (offset: DateOffset): DateOffset => ({
+		direction: offset.direction,
+		...(offset.years ? { years: offset.years } : {}),
+		...(offset.months ? { months: offset.months } : {}),
+		...(offset.days ? { days: offset.days } : {}),
+		...(offset.hours ? { hours: offset.hours } : {}),
+		...(offset.minutes ? { minutes: offset.minutes } : {}),
+	});
+	if (kind === "month") {
+		if (constraint.minMode === "fixed" && constraint.minFixed.trim()) {
+			properties.monthMin = constraint.minFixed;
+		}
+		if (constraint.maxMode === "fixed" && constraint.maxFixed.trim()) {
+			properties.monthMax = constraint.maxFixed;
+		}
+		if (constraint.minMode === "relative") {
+			properties.monthMinOffset = writeOffset(constraint.minOffset);
+		}
+		if (constraint.maxMode === "relative") {
+			properties.monthMaxOffset = writeOffset(constraint.maxOffset);
+		}
+		return;
+	}
+	if (constraint.minMode === "fixed" && constraint.minFixed.trim()) {
+		properties.dateMin = constraint.minFixed;
+	}
+	if (constraint.maxMode === "fixed" && constraint.maxFixed.trim()) {
+		properties.dateMax = constraint.maxFixed;
+	}
+	if (constraint.minMode === "relative") {
+		properties.dateMinOffset = writeOffset(constraint.minOffset);
+	}
+	if (constraint.maxMode === "relative") {
+		properties.dateMaxOffset = writeOffset(constraint.maxOffset);
+	}
 }
 
 /** Returns example input/output schema for a field (for preview only). */
@@ -195,10 +293,29 @@ function getFieldSchemaPreview(field: FormField): {
 		case "date":
 			input.date = "YYYY-MM-DD";
 			output.date = "string (ISO)";
+			{
+				const bounds = resolveBounds("date", field.properties, new Date());
+				if (bounds.min || bounds.max) {
+					input.constraints = {
+						min: field.properties?.dateMinOffset
+							? `${bounds.min} (${describeOffset(field.properties.dateMinOffset, "en")})`
+							: bounds.min,
+						max: field.properties?.dateMaxOffset
+							? `${bounds.max} (${describeOffset(field.properties.dateMaxOffset, "en")})`
+							: bounds.max,
+					};
+				}
+			}
 			break;
 		case "month":
 			input.month = "YYYY-MM";
 			output.month = "string (YYYY-MM)";
+			{
+				const bounds = resolveBounds("month", field.properties, new Date());
+				if (bounds.min || bounds.max) {
+					input.constraints = { min: bounds.min, max: bounds.max };
+				}
+			}
 			break;
 		case "time":
 			input.time = "HH:mm";
@@ -207,6 +324,12 @@ function getFieldSchemaPreview(field: FormField): {
 		case "datetime":
 			input.datetime = "ISO8601";
 			output.datetime = "string (ISO)";
+			{
+				const bounds = resolveBounds("datetime", field.properties, new Date());
+				if (bounds.min || bounds.max) {
+					input.constraints = { min: bounds.min, max: bounds.max };
+				}
+			}
 			break;
 		case "rating":
 			input.rating = 0;
@@ -317,12 +440,11 @@ export function FormEditor({ formId }: FormEditorProps) {
 	const [newFieldMaxFileSize, setNewFieldMaxFileSize] = useState<number | "">(
 		"",
 	);
-	// Type-specific: date/datetime
-	const [newFieldDateMin, setNewFieldDateMin] = useState("");
-	const [newFieldDateMax, setNewFieldDateMax] = useState("");
-	// Type-specific: month
-	const [newFieldMonthMin, setNewFieldMonthMin] = useState("");
-	const [newFieldMonthMax, setNewFieldMonthMax] = useState("");
+	// Type-specific: date/datetime/month constraints
+	const [newFieldDateConstraint, setNewFieldDateConstraint] =
+		useState<DateConstraintValue>(EMPTY_DATE_CONSTRAINT);
+	const [newFieldMonthConstraint, setNewFieldMonthConstraint] =
+		useState<DateConstraintValue>(EMPTY_DATE_CONSTRAINT);
 	// Type-specific: time
 	const [newFieldTimeStep, setNewFieldTimeStep] = useState<number | "">("");
 	// Type-specific: name
@@ -370,6 +492,29 @@ export function FormEditor({ formId }: FormEditorProps) {
 		() => normalizeFieldsForChecksum(fields) !== savedFieldsRef.current,
 		[fields],
 	);
+
+	const dateRangeInvalid = useMemo(() => {
+		if (newFieldType !== "date" && newFieldType !== "datetime") return false;
+		const properties: NonNullable<FormField["properties"]> = {};
+		applyConstraintToProperties(
+			newFieldType,
+			newFieldDateConstraint,
+			properties,
+		);
+		return isResolvedRangeInvalid(newFieldType, properties, new Date());
+	}, [newFieldType, newFieldDateConstraint]);
+
+	const monthRangeInvalid = useMemo(() => {
+		if (newFieldType !== "month") return false;
+		const properties: NonNullable<FormField["properties"]> = {};
+		applyConstraintToProperties("month", newFieldMonthConstraint, properties);
+		return isResolvedRangeInvalid("month", properties, new Date());
+	}, [newFieldType, newFieldMonthConstraint]);
+
+	const constraintInvalid =
+		(newFieldType === "date" || newFieldType === "datetime"
+			? dateRangeInvalid
+			: false) || (newFieldType === "month" ? monthRangeInvalid : false);
 
 	const confirmLeave = useCallback(() => {
 		setShowLeaveDialog(false);
@@ -503,10 +648,8 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldAllowHalf(false);
 		setNewFieldAcceptedTypes("");
 		setNewFieldMaxFileSize("");
-		setNewFieldDateMin("");
-		setNewFieldDateMax("");
-		setNewFieldMonthMin("");
-		setNewFieldMonthMax("");
+		setNewFieldDateConstraint(EMPTY_DATE_CONSTRAINT);
+		setNewFieldMonthConstraint(EMPTY_DATE_CONSTRAINT);
 		setNewFieldTimeStep("");
 		setNewFieldIncludeMiddleName(false);
 		setNewFieldEnableAddressAutocomplete(true);
@@ -577,12 +720,14 @@ export function FormEditor({ formId }: FormEditorProps) {
 				properties.maxFileSize = Number(newFieldMaxFileSize);
 		}
 		if (newFieldType === "date" || newFieldType === "datetime") {
-			if (newFieldDateMin.trim()) properties.dateMin = newFieldDateMin;
-			if (newFieldDateMax.trim()) properties.dateMax = newFieldDateMax;
+			applyConstraintToProperties(
+				newFieldType,
+				newFieldDateConstraint,
+				properties,
+			);
 		}
 		if (newFieldType === "month") {
-			if (newFieldMonthMin.trim()) properties.monthMin = newFieldMonthMin;
-			if (newFieldMonthMax.trim()) properties.monthMax = newFieldMonthMax;
+			applyConstraintToProperties("month", newFieldMonthConstraint, properties);
 		}
 		if (newFieldType === "time" && newFieldTimeStep !== "") {
 			validation.step = Number(newFieldTimeStep);
@@ -623,6 +768,10 @@ export function FormEditor({ formId }: FormEditorProps) {
 			toast.error(t("formEditor.duplicateFieldLabel"));
 			return;
 		}
+		if (constraintInvalid) {
+			toast.error(t("fieldProperties.rangeInvalid"));
+			return;
+		}
 
 		const newField = buildFieldFromForm(`f${Date.now()}`);
 		setFields([...fields, newField]);
@@ -651,10 +800,15 @@ export function FormEditor({ formId }: FormEditorProps) {
 		setNewFieldAllowHalf(field.properties?.allowHalf ?? false);
 		setNewFieldAcceptedTypes(field.properties?.acceptedTypes?.join(", ") ?? "");
 		setNewFieldMaxFileSize(field.properties?.maxFileSize ?? "");
-		setNewFieldDateMin(field.properties?.dateMin ?? "");
-		setNewFieldDateMax(field.properties?.dateMax ?? "");
-		setNewFieldMonthMin(field.properties?.monthMin ?? "");
-		setNewFieldMonthMax(field.properties?.monthMax ?? "");
+		setNewFieldDateConstraint(
+			constraintFromProperties(
+				field.type === "datetime" ? "datetime" : "date",
+				field.properties,
+			),
+		);
+		setNewFieldMonthConstraint(
+			constraintFromProperties("month", field.properties),
+		);
 		setNewFieldTimeStep(
 			field.type === "time" ? (field.validation?.step ?? "") : "",
 		);
@@ -676,6 +830,10 @@ export function FormEditor({ formId }: FormEditorProps) {
 		if (!newFieldLabel.trim() || !editingField) return;
 		if (isFieldLabelDuplicate(newFieldLabel, editingField.id)) {
 			toast.error(t("formEditor.duplicateFieldLabel"));
+			return;
+		}
+		if (constraintInvalid) {
+			toast.error(t("fieldProperties.rangeInvalid"));
 			return;
 		}
 
@@ -1057,47 +1215,21 @@ export function FormEditor({ formId }: FormEditorProps) {
 			)}
 
 			{(newFieldType === "date" || newFieldType === "datetime") && (
-				<div className="grid grid-cols-2 gap-2">
-					<div>
-						<Label>{t("fieldProperties.min")}</Label>
-						<Input
-							type="date"
-							value={newFieldDateMin}
-							onChange={(e) => setNewFieldDateMin(e.target.value)}
-							className="mt-1"
-						/>
-					</div>
-					<div>
-						<Label>{t("fieldProperties.max")}</Label>
-						<Input
-							type="date"
-							value={newFieldDateMax}
-							onChange={(e) => setNewFieldDateMax(e.target.value)}
-							className="mt-1"
-						/>
-					</div>
-				</div>
+				<DateConstraintEditor
+					kind={newFieldType}
+					value={newFieldDateConstraint}
+					onChange={setNewFieldDateConstraint}
+					rangeInvalid={dateRangeInvalid}
+				/>
 			)}
 
 			{newFieldType === "month" && (
-				<div className="grid grid-cols-2 gap-2">
-					<div>
-						<Label>{t("fieldProperties.min")}</Label>
-						<MonthPicker
-							value={newFieldMonthMin}
-							onChange={setNewFieldMonthMin}
-							className="mt-1"
-						/>
-					</div>
-					<div>
-						<Label>{t("fieldProperties.max")}</Label>
-						<MonthPicker
-							value={newFieldMonthMax}
-							onChange={setNewFieldMonthMax}
-							className="mt-1"
-						/>
-					</div>
-				</div>
+				<DateConstraintEditor
+					kind="month"
+					value={newFieldMonthConstraint}
+					onChange={setNewFieldMonthConstraint}
+					rangeInvalid={monthRangeInvalid}
+				/>
 			)}
 
 			{newFieldType === "time" && (
@@ -1516,7 +1648,9 @@ export function FormEditor({ formId }: FormEditorProps) {
 						<Button
 							onClick={handleAddField}
 							disabled={
-								!newFieldLabel.trim() || isFieldLabelDuplicate(newFieldLabel)
+								!newFieldLabel.trim() ||
+								isFieldLabelDuplicate(newFieldLabel) ||
+								constraintInvalid
 							}
 						>
 							{t("formEditor.addField")}
@@ -1547,7 +1681,8 @@ export function FormEditor({ formId }: FormEditorProps) {
 							onClick={handleUpdateField}
 							disabled={
 								!newFieldLabel.trim() ||
-								isFieldLabelDuplicate(newFieldLabel, editingField?.id)
+								isFieldLabelDuplicate(newFieldLabel, editingField?.id) ||
+								constraintInvalid
 							}
 						>
 							{t("common.save")}

@@ -1,3 +1,10 @@
+# [1.3.0-rc.1](https://github.com/carteracredit/forms/compare/v1.2.1...v1.3.0-rc.1) (2026-08-26)
+
+
+### Features
+
+* **date-constraints:** implement date and month offset handling ([d577166](https://github.com/carteracredit/forms/commit/d5771666519c4b62107d24bb1ab71ad87508f100))
+
 ## [1.2.1](https://github.com/carteracredit/forms/compare/v1.2.0...v1.2.1) (2026-08-18)
 
 ## [1.2.1-rc.1](https://github.com/carteracredit/forms/compare/v1.2.0...v1.2.1-rc.1) (2026-08-18)

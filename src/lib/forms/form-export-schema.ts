@@ -34,6 +34,17 @@ const formFieldValidationSchema = z
 	})
 	.optional();
 
+const dateOffsetSchema = z
+	.object({
+		direction: z.enum(["past", "future"]),
+		years: z.number().int().nonnegative().optional(),
+		months: z.number().int().nonnegative().optional(),
+		days: z.number().int().nonnegative().optional(),
+		hours: z.number().int().nonnegative().optional(),
+		minutes: z.number().int().nonnegative().optional(),
+	})
+	.optional();
+
 const formFieldPropertiesSchema = z
 	.object({
 		rows: z.number().int().optional(),
@@ -51,6 +62,10 @@ const formFieldPropertiesSchema = z
 		dateMax: z.string().optional(),
 		monthMin: z.string().optional(),
 		monthMax: z.string().optional(),
+		dateMinOffset: dateOffsetSchema,
+		dateMaxOffset: dateOffsetSchema,
+		monthMinOffset: dateOffsetSchema,
+		monthMaxOffset: dateOffsetSchema,
 	})
 	.optional();
 

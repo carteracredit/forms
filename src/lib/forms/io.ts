@@ -4,6 +4,12 @@ import {
 	formFieldSchema,
 	type FormExport,
 } from "./form-export-schema";
+import {
+	isResolvedRangeInvalid,
+	offsetHasDisallowedUnits,
+	type DateFieldKind,
+	type DateOffset,
+} from "./date-constraints";
 import { z } from "zod";
 
 /**
@@ -110,12 +116,50 @@ export function parseFormImport(raw: string): FormExport {
 	throw new Error("Invalid form export format");
 }
 
+function dateKind(type: string): DateFieldKind | null {
+	if (type === "date" || type === "datetime" || type === "month") return type;
+	return null;
+}
+
+function offsetsForKind(
+	kind: DateFieldKind,
+	properties: FormField["properties"],
+): DateOffset[] {
+	if (!properties) return [];
+	if (kind === "month") {
+		return [properties.monthMinOffset, properties.monthMaxOffset].filter(
+			(o): o is DateOffset => o != null,
+		);
+	}
+	return [properties.dateMinOffset, properties.dateMaxOffset].filter(
+		(o): o is DateOffset => o != null,
+	);
+}
+
 /**
  * Validates an array of fields against the field schema.
  * Returns the validated fields or throws with a descriptive error.
  */
 export function validateFields(fields: unknown[]): FormField[] {
-	return z.array(formFieldSchema).parse(fields) as FormField[];
+	const parsed = z.array(formFieldSchema).parse(fields) as FormField[];
+	const now = new Date();
+	for (const field of parsed) {
+		const kind = dateKind(field.type);
+		if (!kind) continue;
+		for (const offset of offsetsForKind(kind, field.properties)) {
+			if (offsetHasDisallowedUnits(kind, offset)) {
+				throw new Error(
+					`Field "${field.label}" has offset units that are not allowed for type ${kind}`,
+				);
+			}
+		}
+		if (isResolvedRangeInvalid(kind, field.properties, now)) {
+			throw new Error(
+				`Field "${field.label}" has a minimum later than its maximum`,
+			);
+		}
+	}
+	return parsed;
 }
 
 /**
