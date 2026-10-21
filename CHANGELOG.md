@@ -5,6 +5,13 @@
 
 * add AGENTS.md for forms documentation and update package scripts ([7d784b4](https://github.com/carteracredit/forms/commit/7d784b4eea8c1eee3e06e4a1d7a5b92ce835746b))
 
+# [1.3.0](https://github.com/carteracredit/forms/compare/v1.2.1...v1.3.0) (2026-08-26)
+
+
+### Features
+
+* **date-constraints:** implement date and month offset handling ([d577166](https://github.com/carteracredit/forms/commit/d5771666519c4b62107d24bb1ab71ad87508f100))
+
 # [1.3.0-rc.1](https://github.com/carteracredit/forms/compare/v1.2.1...v1.3.0-rc.1) (2026-08-26)
 
 
